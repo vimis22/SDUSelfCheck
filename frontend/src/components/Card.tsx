@@ -3,7 +3,7 @@ import NormalText from './NormalText.tsx';
 
 interface CardProps {
     title: string;
-    amount?: number;
+    amount?: number | string;
     descriptiveText?: string;
     extraText?: string;
 }

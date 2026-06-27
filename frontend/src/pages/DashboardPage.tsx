@@ -1,4 +1,3 @@
-import React from 'react';
 import NormalText from '../components/NormalText.tsx';
 import Card from '../components/Card.tsx';
 import TopBar from '../navigationpages/TopBar.tsx';
@@ -9,12 +8,12 @@ const overviewCards = [
     { title: 'Undervisning', amount: 2,  descriptiveText: 'tilmeldinger',       extraText: 'Forårssemestret 2026'    },
     { title: 'Eksamen',      amount: 3,  descriptiveText: 'kommende eksamener', extraText: 'Vintereksamen 2025-26'   },
     { title: 'Resultater',   amount: 20, descriptiveText: 'beståede  •  Gns. 8.4', extraText: ''                    },
-    { title: 'Studiekort',   amount: undefined, descriptiveText: 'Gyldig',      extraText: 'Udløber 31.07.2026'      },
+    { title: 'Studiekort',   amount: 'Gyldig',  descriptiveText: 'Udløber 31.07.2026', extraText: ''                    },
 ];
 
 function DashboardPage() {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%' }}>
             <TopBar breadcrumb="1. Forside / Dashboard" />
 
             <main style={{ padding: '36px 40px', flex: 1, backgroundColor: '#fafafa' }}>

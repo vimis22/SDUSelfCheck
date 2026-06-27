@@ -1,32 +1,11 @@
-import React from 'react';
-import {
-    Home,
-    BookOpen,
-    ClipboardList,
-    BarChart2,
-    CreditCard,
-    Printer,
-    Mail,
-    User,
-    HelpCircle,
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import NormalText from '../components/NormalText.tsx';
 import NormalButton from '../components/NormalButton.tsx';
 import SideBarItem from '../components/SideBarItem.tsx';
-
-const navItems = [
-    { text: 'Home',           icon: <Home size={20} />,         to: '/' },
-    { text: 'Undervisning',   icon: <BookOpen size={20} />,     to: '/courses' },
-    { text: 'Eksamen',        icon: <ClipboardList size={20} />,to: '/exams' },
-    { text: 'Resultater',     icon: <BarChart2 size={20} />,    to: '/results' },
-    { text: 'Studiekort',     icon: <CreditCard size={20} />,   to: '/student-card' },
-    { text: 'Udskrifter',     icon: <Printer size={20} />,      to: '/documents' },
-    { text: 'Beskeder',       icon: <Mail size={20} />,         to: '/messages' },
-    { text: 'Profil',         icon: <User size={20} />,         to: '/profile' },
-    { text: 'Hjælp & Support',icon: <HelpCircle size={20} />,  to: '/help' },
-];
+import {navItems} from './NavigationItem.tsx';
 
 const SidePanel = () => {
+    const navigate = useNavigate();
     return (
         <aside style={{
             display: 'flex',
@@ -60,7 +39,7 @@ const SidePanel = () => {
 
             {/* Log ud-knap */}
             <div style={{ padding: '0 8px' }}>
-                <NormalButton text="Log ud" onClick={() => console.log('Log ud')} />
+                <NormalButton text="Log ud" onClick={() => navigate('/login')} />
             </div>
         </aside>
     );

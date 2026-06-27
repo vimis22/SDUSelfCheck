@@ -41,7 +41,7 @@ function QRCodePlaceholder() {
     );
 }
 
-function ProfilePage() {
+function StudentProfileCard() {
     const navigate = useNavigate();
 
     return (
@@ -161,4 +161,4 @@ function ProfilePage() {
     );
 }
 
-export default ProfilePage;
+export default StudentProfileCard;
