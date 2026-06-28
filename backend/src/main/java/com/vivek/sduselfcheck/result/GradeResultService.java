@@ -30,7 +30,7 @@ public class GradeResultService {
     }
 
     public List<GradeResultResponse> getAllGradeResults() {
-        return gradeResultRepository.findAll()
+        return gradeResultRepository.findAllByOrderByExamRegistrationExamRegistrationIdAsc()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
