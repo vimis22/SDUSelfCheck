@@ -4,6 +4,8 @@ import com.vivek.sduselfcheck.examregistration.ExamRegistration;
 import com.vivek.sduselfcheck.examregistration.ExamRegistrationRepository;
 import com.vivek.sduselfcheck.result.GradeResult;
 import com.vivek.sduselfcheck.result.GradeResultRepository;
+import com.vivek.sduselfcheck.student.Student;
+import com.vivek.sduselfcheck.student.StudentRepository;
 import com.vivek.sduselfcheck.teacher.Teacher;
 import com.vivek.sduselfcheck.teacher.TeacherRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -18,19 +20,24 @@ public class DataInitializer implements CommandLineRunner {
     private final ExamRegistrationRepository examRegistrationRepository;
     private final TeacherRepository teacherRepository;
     private final GradeResultRepository gradeResultRepository;
+    private final StudentRepository studentRepository;
 
     public DataInitializer(
             ExamRegistrationRepository examRegistrationRepository,
             TeacherRepository teacherRepository,
-            GradeResultRepository gradeResultRepository
+            GradeResultRepository gradeResultRepository,
+            StudentRepository studentRepository
     ) {
         this.examRegistrationRepository = examRegistrationRepository;
         this.teacherRepository = teacherRepository;
         this.gradeResultRepository = gradeResultRepository;
+        this.studentRepository = studentRepository;
     }
 
     @Override
     public void run(String... args) {
+        updateStudentDocumentPreviewData();
+
         if (gradeResultRepository.count() > 0) {
             System.out.println("Grade result test data already exists.");
             return;
@@ -96,6 +103,23 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         System.out.println("Grade result test data inserted.");
+    }
+
+    private void updateStudentDocumentPreviewData() {
+        Student student = studentRepository.findById(1L)
+                .orElse(null);
+
+        if (student == null) {
+            System.out.println("Student test data was not updated because student_id 1 was not found.");
+            return;
+        }
+
+        student.setEnrollmentStatus("ACTIVE");
+        student.setSemester(2);
+
+        studentRepository.save(student);
+
+        System.out.println("Student document preview test data updated.");
     }
 
     private void createGradeResult(

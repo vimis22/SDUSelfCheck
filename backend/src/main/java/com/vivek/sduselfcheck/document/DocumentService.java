@@ -68,6 +68,37 @@ public class DocumentService {
         return mapToResponse(documentRequest);
     }
 
+    public DocumentPreviewResponse getDocumentPreview(Long documentRequestId) {
+        DocumentRequest documentRequest = documentRequestRepository.findById(documentRequestId)
+                .orElseThrow(() -> new RuntimeException("Document request not found with id: " + documentRequestId));
+
+        Student student = documentRequest.getStudent();
+
+        String studentName = student.getUser().getFirstName() + " " + student.getUser().getLastName();
+
+        return new DocumentPreviewResponse(
+                documentRequest.getDocumentRequestId(),
+                documentRequest.getDocumentType(),
+                getDocumentTypeLabel(documentRequest.getDocumentType(), documentRequest.getLanguage()),
+                documentRequest.getLanguage(),
+                documentRequest.getStatus(),
+                documentRequest.getFileName(),
+
+                student.getStudentId(),
+                student.getStudentNumber(),
+                studentName,
+
+                student.getEducation().getEducationId(),
+                student.getEducation().getCode(),
+                student.getEducation().getName(),
+
+                LocalDateTime.now(),
+                documentRequest.getExpiresAt(),
+
+                buildContentLines(documentRequest)
+        );
+    }
+
     private DocumentRequestResponse mapToResponse(DocumentRequest documentRequest) {
         Student student = documentRequest.getStudent();
 
@@ -85,6 +116,78 @@ public class DocumentService {
                 documentRequest.getCreatedAt(),
                 documentRequest.getExpiresAt()
         );
+    }
+
+    private List<String> buildContentLines(DocumentRequest documentRequest) {
+        Student student = documentRequest.getStudent();
+
+        String studentName = student.getUser().getFirstName() + " " + student.getUser().getLastName();
+        String educationName = student.getEducation().getName();
+
+        boolean english = documentRequest.getLanguage() != null
+                && documentRequest.getLanguage().equalsIgnoreCase("EN");
+
+        return switch (documentRequest.getDocumentType()) {
+            case ENROLLMENT_CONFIRMATION -> english
+                    ? List.of(
+                    "This document confirms that the student is enrolled at the university.",
+                    "Student name: " + studentName,
+                    "Student number: " + student.getStudentNumber(),
+                    "Education: " + educationName,
+                    "Enrollment status: " + student.getEnrollmentStatus(),
+                    "Semester: " + student.getSemester()
+            )
+                    : List.of(
+                    "Dette dokument bekræfter, at den studerende er indskrevet på universitetet.",
+                    "Navn: " + studentName,
+                    "Studienummer: " + student.getStudentNumber(),
+                    "Uddannelse: " + educationName,
+                    "Indskrivningsstatus: " + student.getEnrollmentStatus(),
+                    "Semester: " + student.getSemester()
+            );
+
+            case EXAM_TRANSCRIPT_ALL_ATTEMPTS -> english
+                    ? List.of(
+                    "This document is a preview of the exam transcript including all attempts.",
+                    "Student name: " + studentName,
+                    "Student number: " + student.getStudentNumber(),
+                    "Detailed exam attempts will be added in the next version."
+            )
+                    : List.of(
+                    "Dette dokument er en forhåndsvisning af eksamensudskrift inkl. alle forsøg.",
+                    "Navn: " + studentName,
+                    "Studienummer: " + student.getStudentNumber(),
+                    "Detaljerede eksamensforsøg tilføjes i næste version."
+            );
+
+            case PASSED_RESULTS_TRANSCRIPT -> english
+                    ? List.of(
+                    "This document is a preview of passed results.",
+                    "Student name: " + studentName,
+                    "Student number: " + student.getStudentNumber(),
+                    "Passed results will be added in the next version."
+            )
+                    : List.of(
+                    "Dette dokument er en forhåndsvisning af beståede resultater.",
+                    "Navn: " + studentName,
+                    "Studienummer: " + student.getStudentNumber(),
+                    "Beståede resultater tilføjes i næste version."
+            );
+
+            case SINGLE_COURSE_RESULT_CONFIRMATION -> english
+                    ? List.of(
+                    "This document is a preview of a single course result confirmation.",
+                    "Student name: " + studentName,
+                    "Student number: " + student.getStudentNumber(),
+                    "Single course result details will be added in the next version."
+            )
+                    : List.of(
+                    "Dette dokument er en forhåndsvisning af bekræftelse på resultat for enkeltfag.",
+                    "Navn: " + studentName,
+                    "Studienummer: " + student.getStudentNumber(),
+                    "Detaljer for enkeltfagsresultat tilføjes i næste version."
+            );
+        };
     }
 
     private String generateFileName(

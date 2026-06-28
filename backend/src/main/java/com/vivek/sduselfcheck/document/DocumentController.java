@@ -34,4 +34,9 @@ public class DocumentController {
     public DocumentRequestResponse getDocumentById(@PathVariable Long documentRequestId) {
         return documentService.getDocumentById(documentRequestId);
     }
+
+    @GetMapping("/{documentRequestId}/preview")
+    public DocumentPreviewResponse getDocumentPreview(@PathVariable Long documentRequestId) {
+        return documentService.getDocumentPreview(documentRequestId);
+    }
 }
