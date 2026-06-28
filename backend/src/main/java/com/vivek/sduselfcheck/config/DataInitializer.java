@@ -1,98 +1,126 @@
 package com.vivek.sduselfcheck.config;
 
-import com.vivek.sduselfcheck.course.Course;
-import com.vivek.sduselfcheck.course.CourseRepository;
-import com.vivek.sduselfcheck.education.Education;
-import com.vivek.sduselfcheck.education.EducationRepository;
-import com.vivek.sduselfcheck.faculty.Faculty;
-import com.vivek.sduselfcheck.faculty.FacultyRepository;
-import com.vivek.sduselfcheck.school.School;
-import com.vivek.sduselfcheck.school.SchoolRepository;
+import com.vivek.sduselfcheck.examregistration.ExamRegistration;
+import com.vivek.sduselfcheck.examregistration.ExamRegistrationRepository;
+import com.vivek.sduselfcheck.result.GradeResult;
+import com.vivek.sduselfcheck.result.GradeResultRepository;
+import com.vivek.sduselfcheck.teacher.Teacher;
+import com.vivek.sduselfcheck.teacher.TeacherRepository;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
-@Configuration
-public class DataInitializer {
+import java.time.LocalDateTime;
+import java.util.List;
 
-    @Bean
-    CommandLineRunner initData(
-            FacultyRepository facultyRepository,
-            SchoolRepository schoolRepository,
-            EducationRepository educationRepository,
-            CourseRepository courseRepository
+@Component
+public class DataInitializer implements CommandLineRunner {
+
+    private final ExamRegistrationRepository examRegistrationRepository;
+    private final TeacherRepository teacherRepository;
+    private final GradeResultRepository gradeResultRepository;
+
+    public DataInitializer(
+            ExamRegistrationRepository examRegistrationRepository,
+            TeacherRepository teacherRepository,
+            GradeResultRepository gradeResultRepository
     ) {
-        return args -> {
+        this.examRegistrationRepository = examRegistrationRepository;
+        this.teacherRepository = teacherRepository;
+        this.gradeResultRepository = gradeResultRepository;
+    }
 
-            if (facultyRepository.count() > 0) {
-                System.out.println("Test data already exists. Skipping DataInitializer.");
-                return;
-            }
+    @Override
+    public void run(String... args) {
+        if (gradeResultRepository.count() > 0) {
+            System.out.println("Grade result test data already exists.");
+            return;
+        }
 
-            Faculty technicalFaculty = new Faculty(
-                    "Technical Faculty",
-                    "TEK"
-            );
-            facultyRepository.save(technicalFaculty);
+        List<ExamRegistration> examRegistrations = examRegistrationRepository.findAll();
+        List<Teacher> teachers = teacherRepository.findAll();
 
-            School softwareSchool = new School(
-                    "Institute for Software Engineering",
-                    "ISE",
-                    technicalFaculty
-            );
-            schoolRepository.save(softwareSchool);
+        if (examRegistrations.isEmpty()) {
+            System.out.println("No exam registrations found. Grade result test data was not inserted.");
+            return;
+        }
 
-            Education softwareEngineering = new Education(
-                    "Software Engineering MSc",
-                    "SE-MSC",
-                    "Master",
-                    120,
-                    softwareSchool
-            );
-            educationRepository.save(softwareEngineering);
+        if (teachers.isEmpty()) {
+            System.out.println("No teachers found. Grade result test data was not inserted.");
+            return;
+        }
 
-            Course advancedSoftwareArchitecture = new Course(
-                    "Advanced Software Architecture",
-                    "SE-ASA-01",
-                    10,
-                    1,
+        Teacher teacher = teachers.get(0);
+
+        if (examRegistrations.size() >= 1) {
+            createGradeResult(
+                    examRegistrations.get(0),
+                    teacher,
+                    "10",
+                    "B",
                     true,
-                    softwareEngineering
+                    "Good performance. The student demonstrates strong understanding of the course content."
             );
+        }
 
-            Course bigDataAndScienceTechnologies = new Course(
-                    "Big Data and Science Technologies",
-                    "SE-BDST-01",
-                    10,
-                    1,
+        if (examRegistrations.size() >= 2) {
+            createGradeResult(
+                    examRegistrations.get(1),
+                    teacher,
+                    "7",
+                    "C",
                     true,
-                    softwareEngineering
+                    "Solid performance. The student has met the learning objectives with some minor weaknesses."
             );
+        }
 
-            Course advancedInteractionDesign = new Course(
-                    "Advanced Interaction Design",
-                    "SE-AID-02",
-                    10,
-                    2,
+        if (examRegistrations.size() >= 3) {
+            createGradeResult(
+                    examRegistrations.get(2),
+                    teacher,
+                    "12",
+                    "A",
                     true,
-                    softwareEngineering
+                    "Excellent performance. The student demonstrates a very high level of understanding."
             );
+        }
 
-            Course modelBasedSoftwareDevelopment = new Course(
-                    "Model-Based Software Development",
-                    "SE-MBSD-02",
-                    10,
-                    2,
+        if (examRegistrations.size() >= 4) {
+            createGradeResult(
+                    examRegistrations.get(3),
+                    teacher,
+                    "02",
+                    "E",
                     true,
-                    softwareEngineering
+                    "The student has passed, but the performance only meets the minimum requirements."
             );
+        }
 
-            courseRepository.save(advancedSoftwareArchitecture);
-            courseRepository.save(bigDataAndScienceTechnologies);
-            courseRepository.save(advancedInteractionDesign);
-            courseRepository.save(modelBasedSoftwareDevelopment);
+        System.out.println("Grade result test data inserted.");
+    }
 
-            System.out.println("Test data inserted successfully.");
-        };
+    private void createGradeResult(
+            ExamRegistration examRegistration,
+            Teacher teacher,
+            String gradeValue,
+            String ectsGrade,
+            boolean passed,
+            String feedback
+    ) {
+        if (gradeResultRepository.existsByExamRegistrationExamRegistrationId(
+                examRegistration.getExamRegistrationId()
+        )) {
+            return;
+        }
+
+        GradeResult gradeResult = new GradeResult();
+        gradeResult.setExamRegistration(examRegistration);
+        gradeResult.setTeacher(teacher);
+        gradeResult.setGradeValue(gradeValue);
+        gradeResult.setEctsGrade(ectsGrade);
+        gradeResult.setPassed(passed);
+        gradeResult.setFeedback(feedback);
+        gradeResult.setGradedAt(LocalDateTime.now());
+
+        gradeResultRepository.save(gradeResult);
     }
 }

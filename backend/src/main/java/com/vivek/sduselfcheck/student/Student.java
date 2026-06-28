@@ -24,6 +24,13 @@ public class Student {
     @JoinColumn(name = "education_id", nullable = false)
     private Education education;
 
+    @Column(name = "enrollment_status")
+    private String enrollmentStatus;
+
+    private String gender;
+
+    private Integer semester;
+
     public Student() {
     }
 
@@ -63,5 +70,29 @@ public class Student {
 
     public void setEducation(Education education) {
         this.education = education;
+    }
+
+    public String getEnrollmentStatus() {
+        return enrollmentStatus;
+    }
+
+    public void setEnrollmentStatus(String enrollmentStatus) {
+        this.enrollmentStatus = enrollmentStatus;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public Integer getSemester() {
+        return semester;
+    }
+
+    public void setSemester(Integer semester) {
+        this.semester = semester;
     }
 }

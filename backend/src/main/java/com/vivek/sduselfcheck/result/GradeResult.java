@@ -4,7 +4,7 @@ import com.vivek.sduselfcheck.examregistration.ExamRegistration;
 import com.vivek.sduselfcheck.teacher.Teacher;
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "grade_result")
@@ -12,50 +12,59 @@ public class GradeResult {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "result_id")
-    private Long resultId;
+    @Column(name = "grade_result_id")
+    private Long gradeResultId;
 
     @OneToOne
     @JoinColumn(name = "exam_registration_id", nullable = false, unique = true)
     private ExamRegistration examRegistration;
 
+    @ManyToOne
+    @JoinColumn(name = "teacher_id", nullable = false)
+    private Teacher teacher;
+
     @Column(name = "grade_value", nullable = false)
     private String gradeValue;
 
-    @Column(name = "grading_scale", nullable = false)
-    private String gradingScale;
+    @Column(name = "ects_grade")
+    private String ectsGrade;
 
-    @Column(nullable = false)
-    private Boolean passed;
+    @Column(name = "passed", nullable = false)
+    private boolean passed;
 
-    @Column(name = "published_at", nullable = false)
-    private LocalDate publishedAt;
-
+    @Column(name = "feedback", columnDefinition = "TEXT")
     private String feedback;
 
-    @ManyToOne
-    @JoinColumn(name = "teacher_id")
-    private Teacher gradedBy;
+    @Column(name = "graded_at")
+    private LocalDateTime gradedAt;
 
     public GradeResult() {
     }
 
-    public GradeResult(ExamRegistration examRegistration, String gradeValue, String gradingScale, Boolean passed, LocalDate publishedAt, String feedback, Teacher gradedBy) {
+    public GradeResult(
+            ExamRegistration examRegistration,
+            Teacher teacher,
+            String gradeValue,
+            String ectsGrade,
+            boolean passed,
+            String feedback,
+            LocalDateTime gradedAt
+    ) {
         this.examRegistration = examRegistration;
+        this.teacher = teacher;
         this.gradeValue = gradeValue;
-        this.gradingScale = gradingScale;
+        this.ectsGrade = ectsGrade;
         this.passed = passed;
-        this.publishedAt = publishedAt;
         this.feedback = feedback;
-        this.gradedBy = gradedBy;
+        this.gradedAt = gradedAt;
     }
 
-    public Long getResultId() {
-        return resultId;
+    public Long getGradeResultId() {
+        return gradeResultId;
     }
 
-    public void setResultId(Long resultId) {
-        this.resultId = resultId;
+    public void setGradeResultId(Long gradeResultId) {
+        this.gradeResultId = gradeResultId;
     }
 
     public ExamRegistration getExamRegistration() {
@@ -66,6 +75,14 @@ public class GradeResult {
         this.examRegistration = examRegistration;
     }
 
+    public Teacher getTeacher() {
+        return teacher;
+    }
+
+    public void setTeacher(Teacher teacher) {
+        this.teacher = teacher;
+    }
+
     public String getGradeValue() {
         return gradeValue;
     }
@@ -74,28 +91,20 @@ public class GradeResult {
         this.gradeValue = gradeValue;
     }
 
-    public String getGradingScale() {
-        return gradingScale;
+    public String getEctsGrade() {
+        return ectsGrade;
     }
 
-    public void setGradingScale(String gradingScale) {
-        this.gradingScale = gradingScale;
+    public void setEctsGrade(String ectsGrade) {
+        this.ectsGrade = ectsGrade;
     }
 
-    public Boolean getPassed() {
+    public boolean isPassed() {
         return passed;
     }
 
-    public void setPassed(Boolean passed) {
+    public void setPassed(boolean passed) {
         this.passed = passed;
-    }
-
-    public LocalDate getPublishedAt() {
-        return publishedAt;
-    }
-
-    public void setPublishedAt(LocalDate publishedAt) {
-        this.publishedAt = publishedAt;
     }
 
     public String getFeedback() {
@@ -106,11 +115,11 @@ public class GradeResult {
         this.feedback = feedback;
     }
 
-    public Teacher getGradedBy() {
-        return gradedBy;
+    public LocalDateTime getGradedAt() {
+        return gradedAt;
     }
 
-    public void setGradedBy(Teacher gradedBy) {
-        this.gradedBy = gradedBy;
+    public void setGradedAt(LocalDateTime gradedAt) {
+        this.gradedAt = gradedAt;
     }
 }
