@@ -1,5 +1,8 @@
 package com.vivek.sduselfcheck.document;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,9 +13,14 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final DocumentPdfService documentPdfService;
 
-    public DocumentController(DocumentService documentService) {
+    public DocumentController(
+            DocumentService documentService,
+            DocumentPdfService documentPdfService
+    ) {
         this.documentService = documentService;
+        this.documentPdfService = documentPdfService;
     }
 
     @GetMapping("/types")
@@ -38,5 +46,16 @@ public class DocumentController {
     @GetMapping("/{documentRequestId}/preview")
     public DocumentPreviewResponse getDocumentPreview(@PathVariable Long documentRequestId) {
         return documentService.getDocumentPreview(documentRequestId);
+    }
+
+    @GetMapping("/{documentRequestId}/download")
+    public ResponseEntity<byte[]> downloadDocument(@PathVariable Long documentRequestId) {
+        byte[] pdfBytes = documentPdfService.generateDocumentPdf(documentRequestId);
+        String fileName = documentPdfService.getFileName(documentRequestId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
     }
 }
