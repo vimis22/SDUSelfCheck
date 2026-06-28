@@ -1,0 +1,8 @@
+package com.vivek.sduselfcheck.document;
+
+public enum DocumentType {
+    ENROLLMENT_CONFIRMATION,
+    EXAM_TRANSCRIPT_ALL_ATTEMPTS,
+    PASSED_RESULTS_TRANSCRIPT,
+    SINGLE_COURSE_RESULT_CONFIRMATION
+}
