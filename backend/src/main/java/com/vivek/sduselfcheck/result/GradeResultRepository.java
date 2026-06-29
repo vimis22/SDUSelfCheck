@@ -13,6 +13,8 @@ public interface GradeResultRepository extends JpaRepository<GradeResult, Long> 
 
     List<GradeResult> findByExamRegistrationStudentStudentId(Long studentId);
 
+    List<GradeResult> findByExamRegistrationStudentStudentIdOrderByExamRegistrationExamRegistrationIdAsc(Long studentId);
+
     List<GradeResult> findByTeacherTeacherId(Long teacherId);
 
     boolean existsByExamRegistrationExamRegistrationId(Long examRegistrationId);

@@ -1,5 +1,7 @@
 package com.vivek.sduselfcheck.document;
 
+import com.vivek.sduselfcheck.result.GradeResult;
+import com.vivek.sduselfcheck.result.GradeResultRepository;
 import com.vivek.sduselfcheck.student.Student;
 import com.vivek.sduselfcheck.student.StudentRepository;
 import org.springframework.stereotype.Service;
@@ -13,13 +15,16 @@ public class DocumentService {
 
     private final DocumentRequestRepository documentRequestRepository;
     private final StudentRepository studentRepository;
+    private final GradeResultRepository gradeResultRepository;
 
     public DocumentService(
             DocumentRequestRepository documentRequestRepository,
-            StudentRepository studentRepository
+            StudentRepository studentRepository,
+            GradeResultRepository gradeResultRepository
     ) {
         this.documentRequestRepository = documentRequestRepository;
         this.studentRepository = studentRepository;
+        this.gradeResultRepository = gradeResultRepository;
     }
 
     public List<DocumentType> getDocumentTypes() {
@@ -142,37 +147,13 @@ public class DocumentService {
                     "Navn: " + studentName,
                     "Studienummer: " + student.getStudentNumber(),
                     "Uddannelse: " + educationName,
-                    "Indskrivningsstatus: " + student.getEnrollmentStatus(),
+                    "Indskrivningsstatus: " + formatEnrollmentStatus(student.getEnrollmentStatus(), false),
                     "Semester: " + student.getSemester()
             );
 
-            case EXAM_TRANSCRIPT_ALL_ATTEMPTS -> english
-                    ? List.of(
-                    "This document is a preview of the exam transcript including all attempts.",
-                    "Student name: " + studentName,
-                    "Student number: " + student.getStudentNumber(),
-                    "Detailed exam attempts will be added in the next version."
-            )
-                    : List.of(
-                    "Dette dokument er en forhåndsvisning af eksamensudskrift inkl. alle forsøg.",
-                    "Navn: " + studentName,
-                    "Studienummer: " + student.getStudentNumber(),
-                    "Detaljerede eksamensforsøg tilføjes i næste version."
-            );
+            case EXAM_TRANSCRIPT_ALL_ATTEMPTS -> buildExamTranscriptLines(student, english, false);
 
-            case PASSED_RESULTS_TRANSCRIPT -> english
-                    ? List.of(
-                    "This document is a preview of passed results.",
-                    "Student name: " + studentName,
-                    "Student number: " + student.getStudentNumber(),
-                    "Passed results will be added in the next version."
-            )
-                    : List.of(
-                    "Dette dokument er en forhåndsvisning af beståede resultater.",
-                    "Navn: " + studentName,
-                    "Studienummer: " + student.getStudentNumber(),
-                    "Beståede resultater tilføjes i næste version."
-            );
+            case PASSED_RESULTS_TRANSCRIPT -> buildExamTranscriptLines(student, english, true);
 
             case SINGLE_COURSE_RESULT_CONFIRMATION -> english
                     ? List.of(
@@ -188,6 +169,94 @@ public class DocumentService {
                     "Detaljer for enkeltfagsresultat tilføjes i næste version."
             );
         };
+    }
+
+    private List<String> buildExamTranscriptLines(
+            Student student,
+            boolean english,
+            boolean onlyPassedResults
+    ) {
+        List<GradeResult> gradeResults =
+                gradeResultRepository.findByExamRegistrationStudentStudentIdOrderByExamRegistrationExamRegistrationIdAsc(
+                        student.getStudentId()
+                );
+
+        if (onlyPassedResults) {
+            gradeResults = gradeResults.stream()
+                    .filter(GradeResult::isPassed)
+                    .toList();
+        }
+
+        String studentName = student.getUser().getFirstName() + " " + student.getUser().getLastName();
+
+        List<String> lines = new java.util.ArrayList<>();
+
+        if (english) {
+            lines.add(onlyPassedResults
+                    ? "This document contains the student's passed results."
+                    : "This document contains the student's exam transcript including all attempts.");
+            lines.add("Student name: " + studentName);
+            lines.add("Student number: " + student.getStudentNumber());
+            lines.add("Education: " + student.getEducation().getName());
+            lines.add("");
+            lines.add("Results:");
+
+            if (gradeResults.isEmpty()) {
+                lines.add("No grade results found.");
+                return lines;
+            }
+
+            for (GradeResult gradeResult : gradeResults) {
+                lines.add(formatGradeResultLine(gradeResult, true));
+            }
+
+            return lines;
+        }
+
+        lines.add(onlyPassedResults
+                ? "Dette dokument indeholder den studerendes beståede resultater."
+                : "Dette dokument indeholder den studerendes eksamensudskrift inkl. alle forsøg.");
+        lines.add("Navn: " + studentName);
+        lines.add("Studienummer: " + student.getStudentNumber());
+        lines.add("Uddannelse: " + student.getEducation().getName());
+        lines.add("");
+        lines.add("Resultater:");
+
+        if (gradeResults.isEmpty()) {
+            lines.add("Ingen karakterresultater fundet.");
+            return lines;
+        }
+
+        for (GradeResult gradeResult : gradeResults) {
+            lines.add(formatGradeResultLine(gradeResult, false));
+        }
+
+        return lines;
+    }
+
+    private String formatGradeResultLine(GradeResult gradeResult, boolean english) {
+        String courseName = gradeResult.getExamRegistration()
+                .getExam()
+                .getCourse()
+                .getName();
+
+        String examTitle = gradeResult.getExamRegistration()
+                .getExam()
+                .getTitle();
+
+        String passedText = gradeResult.isPassed()
+                ? english ? "Passed" : "Bestået"
+                : english ? "Not passed" : "Ikke bestået";
+
+        return courseName
+                + " | "
+                + examTitle
+                + " | Grade: "
+                + gradeResult.getGradeValue()
+                + " | ECTS: "
+                + gradeResult.getEctsGrade()
+                + " | "
+                + passedText;
     }
 
     private String generateFileName(
@@ -221,5 +290,21 @@ public class DocumentService {
                     ? "Confirmation of single course result"
                     : "Bekræftelse på resultat for enkeltfag";
         };
+    }
+
+    private String formatEnrollmentStatus(String enrollmentStatus, boolean english) {
+        if (enrollmentStatus == null) {
+            return english ? "Unknown" : "Ukendt";
+        }
+
+        if (enrollmentStatus.equalsIgnoreCase("ACTIVE")) {
+            return english ? "Active" : "Aktiv";
+        }
+
+        if (enrollmentStatus.equalsIgnoreCase("INACTIVE")) {
+            return english ? "Inactive" : "Inaktiv";
+        }
+
+        return enrollmentStatus;
     }
 }
