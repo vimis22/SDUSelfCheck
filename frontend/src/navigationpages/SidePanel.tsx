@@ -2,10 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import NormalText from '../components/NormalText.tsx';
 import NormalButton from '../components/NormalButton.tsx';
 import SideBarItem from '../components/SideBarItem.tsx';
-import {navItems} from './NavigationItem.tsx';
+import { navItems } from './NavigationItem.tsx';
 
 const SidePanel = () => {
     const navigate = useNavigate();
+
     return (
         <aside style={{
             display: 'flex',
@@ -35,6 +36,41 @@ const SidePanel = () => {
                         />
                     ))}
                 </nav>
+
+                {/* Simple rolle-knapper */}
+                <div style={{
+                    marginTop: '24px',
+                    paddingTop: '16px',
+                    borderTop: '1px solid #e5e7eb',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                }}>
+                    <div style={{ paddingLeft: '16px' }}>
+                        <NormalText text="Demo roller" size={13} color="#777" fontWeight={700} />
+                    </div>
+
+                    <button
+                        onClick={() => navigate('/student-dashboard')}
+                        style={dashboardButtonStyle}
+                    >
+                        Student Dashboard
+                    </button>
+
+                    <button
+                        onClick={() => navigate('/teacher-dashboard')}
+                        style={dashboardButtonStyle}
+                    >
+                        Teacher Dashboard
+                    </button>
+
+                    <button
+                        onClick={() => navigate('/admin-dashboard')}
+                        style={dashboardButtonStyle}
+                    >
+                        Admin Dashboard
+                    </button>
+                </div>
             </div>
 
             {/* Log ud-knap */}
@@ -43,6 +79,17 @@ const SidePanel = () => {
             </div>
         </aside>
     );
+};
+
+const dashboardButtonStyle = {
+    border: 'none',
+    backgroundColor: '#f3f4f6',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    textAlign: 'left' as const,
+    fontSize: '14px',
+    color: '#333',
 };
 
 export default SidePanel;

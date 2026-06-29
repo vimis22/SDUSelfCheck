@@ -103,7 +103,11 @@ const tdStyle: React.CSSProperties = {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-function DocumentsPage() {
+type DocumentsPageProps = {
+    showPageHeader?: boolean;
+};
+
+function DocumentsPage({ showPageHeader = true }: DocumentsPageProps) {
     const navigate = useNavigate();
 
     const [documentTypes, setDocumentTypes] = useState<DocumentTypeValue[]>([]);
@@ -208,26 +212,29 @@ function DocumentsPage() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%' }}>
-            <TopBar breadcrumb="6. Udskrifter" />
+            {showPageHeader && <TopBar breadcrumb="6. Udskrifter" />}
 
             <main style={{ padding: '36px 40px', flex: 1, backgroundColor: '#fafafa' }}>
 
-                {/* Tilbage */}
-                <button
-                    onClick={() => navigate('/')}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        padding: 0, marginBottom: '16px',
-                    }}
-                >
-                    <ChevronLeft size={16} color="#555" />
-                    <NormalText text="Tilbage" size={13} color="#555" fontWeight={400} />
-                </button>
+                {showPageHeader && (
+                    <>
+                        <button
+                            onClick={() => navigate('/')}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '4px',
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                padding: 0, marginBottom: '16px',
+                            }}
+                        >
+                            <ChevronLeft size={16} color="#555" />
+                            <NormalText text="Tilbage" size={13} color="#555" fontWeight={400} />
+                        </button>
 
-                <div style={{ marginBottom: '24px' }}>
-                    <NormalText text="Udskrifter" size={28} color="#111" fontWeight={700} />
-                </div>
+                        <div style={{ marginBottom: '24px' }}>
+                            <NormalText text="Udskrifter" size={28} color="#111" fontWeight={700} />
+                        </div>
+                    </>
+                )}
 
                 {error && (
                     <div style={{
