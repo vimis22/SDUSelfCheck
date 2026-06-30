@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 
 type GradeResult = {
     gradeResultId: number
@@ -32,8 +32,6 @@ type GradeResult = {
 
 type EditGradeForm = {
     gradeValue: string
-    ectsGrade: string
-    passed: boolean
     feedback: string
 }
 
@@ -47,8 +45,6 @@ const TeacherDashboard = () => {
     const [editingGrade, setEditingGrade] = useState<GradeResult | null>(null)
     const [editForm, setEditForm] = useState<EditGradeForm>({
         gradeValue: '',
-        ectsGrade: '',
-        passed: true,
         feedback: '',
     })
 
@@ -83,8 +79,6 @@ const TeacherDashboard = () => {
 
         setEditForm({
             gradeValue: gradeResult.gradeValue ?? '',
-            ectsGrade: gradeResult.ectsGrade ?? '',
-            passed: gradeResult.passed,
             feedback: gradeResult.feedback ?? '',
         })
     }
@@ -93,8 +87,6 @@ const TeacherDashboard = () => {
         setEditingGrade(null)
         setEditForm({
             gradeValue: '',
-            ectsGrade: '',
-            passed: true,
             feedback: '',
         })
     }
@@ -112,8 +104,8 @@ const TeacherDashboard = () => {
                 examRegistrationId: editingGrade.examRegistrationId,
                 teacherId: editingGrade.teacherId ?? teacherId,
                 gradeValue: editForm.gradeValue,
-                ectsGrade: editForm.ectsGrade,
-                passed: editForm.passed,
+                ectsGrade: calculateEctsGrade(editForm.gradeValue),
+                passed: calculatePassed(editForm.gradeValue),
                 feedback: editForm.feedback,
             }
 
@@ -166,6 +158,9 @@ const TeacherDashboard = () => {
     const formatPassed = (passed: boolean) => {
         return passed ? 'Bestået' : 'Ikke bestået'
     }
+
+    const calculatedEctsGrade = calculateEctsGrade(editForm.gradeValue)
+    const calculatedPassed = calculatePassed(editForm.gradeValue)
 
     return (
         <div style={styles.page}>
@@ -270,44 +265,46 @@ const TeacherDashboard = () => {
                         Retter karakter for {getStudentName(editingGrade)} i {editingGrade.courseName}.
                     </p>
 
+                    <div style={styles.noticeBox}>
+                        ECTS-grade og bestået-status beregnes automatisk ud fra karakteren.
+                    </div>
+
                     <div style={styles.formGrid}>
                         <label style={styles.label}>
                             Karakter
-                            <input
+                            <select
                                 value={editForm.gradeValue}
                                 onChange={(event) =>
                                     setEditForm({ ...editForm, gradeValue: event.target.value })
                                 }
                                 style={styles.input}
-                            />
+                            >
+                                <option value="12">12</option>
+                                <option value="10">10</option>
+                                <option value="7">7</option>
+                                <option value="4">4</option>
+                                <option value="02">02</option>
+                                <option value="00">00</option>
+                                <option value="-3">-3</option>
+                            </select>
                         </label>
 
                         <label style={styles.label}>
-                            ECTS grade
+                            ECTS-grade
                             <input
-                                value={editForm.ectsGrade}
-                                onChange={(event) =>
-                                    setEditForm({ ...editForm, ectsGrade: event.target.value })
-                                }
-                                style={styles.input}
+                                value={calculatedEctsGrade}
+                                readOnly
+                                style={styles.readOnlyInput}
                             />
                         </label>
 
                         <label style={styles.label}>
                             Status
-                            <select
-                                value={editForm.passed ? 'true' : 'false'}
-                                onChange={(event) =>
-                                    setEditForm({
-                                        ...editForm,
-                                        passed: event.target.value === 'true',
-                                    })
-                                }
-                                style={styles.input}
-                            >
-                                <option value="true">Bestået</option>
-                                <option value="false">Ikke bestået</option>
-                            </select>
+                            <input
+                                value={formatPassed(calculatedPassed)}
+                                readOnly
+                                style={styles.readOnlyInput}
+                            />
                         </label>
                     </div>
 
@@ -337,7 +334,36 @@ const TeacherDashboard = () => {
     )
 }
 
-const styles: { [key: string]: React.CSSProperties } = {
+const calculateEctsGrade = (gradeValue: string) => {
+    switch (gradeValue) {
+        case '12':
+            return 'A'
+        case '10':
+            return 'B'
+        case '7':
+            return 'C'
+        case '4':
+            return 'D'
+        case '02':
+            return 'E'
+        case '00':
+            return 'Fx'
+        case '-3':
+            return 'F'
+        default:
+            return ''
+    }
+}
+
+const calculatePassed = (gradeValue: string) => {
+    return gradeValue === '12'
+        || gradeValue === '10'
+        || gradeValue === '7'
+        || gradeValue === '4'
+        || gradeValue === '02'
+}
+
+const styles: { [key: string]: CSSProperties } = {
     page: {
         padding: '32px',
         backgroundColor: '#f8f9f7',
@@ -386,6 +412,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardSubtitle: {
         marginTop: '6px',
         color: '#6b7280',
+    },
+    noticeBox: {
+        marginTop: '16px',
+        marginBottom: '16px',
+        padding: '12px 14px',
+        backgroundColor: '#f0f7ee',
+        border: '1px solid #d6ead2',
+        borderRadius: '10px',
+        color: '#2f472c',
+        fontWeight: 600,
     },
     refreshButton: {
         backgroundColor: '#2f472c',
@@ -460,6 +496,15 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderRadius: '8px',
         padding: '10px',
         fontSize: '14px',
+        backgroundColor: '#ffffff',
+    },
+    readOnlyInput: {
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        padding: '10px',
+        fontSize: '14px',
+        backgroundColor: '#f3f4f6',
+        color: '#374151',
     },
     textarea: {
         border: '1px solid #d1d5db',
