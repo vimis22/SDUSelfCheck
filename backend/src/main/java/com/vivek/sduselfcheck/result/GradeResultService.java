@@ -80,8 +80,8 @@ public class GradeResultService {
         gradeResult.setExamRegistration(examRegistration);
         gradeResult.setTeacher(teacher);
         gradeResult.setGradeValue(request.getGradeValue());
-        gradeResult.setEctsGrade(request.getEctsGrade());
-        gradeResult.setPassed(request.isPassed());
+        gradeResult.setEctsGrade(calculateEctsGrade(request.getGradeValue()));
+        gradeResult.setPassed(calculatePassed(request.getGradeValue()));
         gradeResult.setFeedback(request.getFeedback());
         gradeResult.setGradedAt(LocalDateTime.now());
 
@@ -109,13 +109,42 @@ public class GradeResultService {
         gradeResult.setExamRegistration(examRegistration);
         gradeResult.setTeacher(teacher);
         gradeResult.setGradeValue(request.getGradeValue());
-        gradeResult.setEctsGrade(request.getEctsGrade());
-        gradeResult.setPassed(request.isPassed());
+        gradeResult.setEctsGrade(calculateEctsGrade(request.getGradeValue()));
+        gradeResult.setPassed(calculatePassed(request.getGradeValue()));
         gradeResult.setFeedback(request.getFeedback());
         gradeResult.setGradedAt(LocalDateTime.now());
 
         gradeResultRepository.save(gradeResult);
         return mapToResponse(gradeResult);
+    }
+
+    private String calculateEctsGrade(String gradeValue) {
+        if (gradeValue == null) {
+            throw new RuntimeException("Invalid grade value: null");
+        }
+
+        return switch (gradeValue.trim()) {
+            case "12"  -> "A";
+            case "10"  -> "B";
+            case "7"   -> "C";
+            case "4"   -> "D";
+            case "02"  -> "E";
+            case "00"  -> "Fx";
+            case "-3"  -> "F";
+            default    -> throw new RuntimeException("Invalid grade value: " + gradeValue);
+        };
+    }
+
+    private boolean calculatePassed(String gradeValue) {
+        if (gradeValue == null) {
+            throw new RuntimeException("Invalid grade value: null");
+        }
+
+        return switch (gradeValue.trim()) {
+            case "12", "10", "7", "4", "02" -> true;
+            case "00", "-3"                  -> false;
+            default -> throw new RuntimeException("Invalid grade value: " + gradeValue);
+        };
     }
 
     private GradeResultResponse mapToResponse(GradeResult gradeResult) {

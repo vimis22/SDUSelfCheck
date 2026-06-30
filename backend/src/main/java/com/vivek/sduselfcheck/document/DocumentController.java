@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/documents")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class DocumentController {
 
     private final DocumentService documentService;
@@ -46,6 +46,12 @@ public class DocumentController {
     @GetMapping("/{documentRequestId}/preview")
     public DocumentPreviewResponse getDocumentPreview(@PathVariable Long documentRequestId) {
         return documentService.getDocumentPreview(documentRequestId);
+    }
+
+    @DeleteMapping("/{documentRequestId}")
+    public ResponseEntity<Void> deleteDocumentRequest(@PathVariable Long documentRequestId) {
+        documentService.deleteDocumentRequest(documentRequestId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{documentRequestId}/download")

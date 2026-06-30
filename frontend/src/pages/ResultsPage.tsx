@@ -1,136 +1,270 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
-import TopBar from '../navigationpages/TopBar.tsx';
-import NormalText from '../components/NormalText.tsx';
-import NormalButton from '../components/NormalButton.tsx';
+import { useEffect, useState, type CSSProperties } from 'react'
 
-interface Result {
-    fagkode: string;
-    fagnavn: string;
-    dato: string;
-    karakter: string;
-    ects: number;
-    ectsSkar: string;
-    semester: string;
+type GradeResult = {
+    gradeResultId: number
+    examRegistrationId: number
+
+    studentId?: number
+    studentNumber?: string
+    studentFirstName?: string
+    studentLastName?: string
+
+    examId?: number
+    examTitle?: string
+    examType?: string
+    examDate?: string
+
+    courseId?: number
+    courseCode?: string
+    courseName?: string
+
+    teacherId?: number
+    teacherEmployeeNumber?: string
+    teacherFirstName?: string
+    teacherLastName?: string
+
+    gradeValue: string
+    ectsGrade?: string
+    passed: boolean
+    feedback?: string
+    gradedAt?: string
 }
 
-const results: Result[] = [
-    { fagkode: 'TS20054102', fagnavn: 'Engineering Research in Software',                       dato: '22.06.2026', karakter: '7',  ects: 10, ectsSkar: 'C', semester: 'Forårssemesteret 2026' },
-    { fagkode: 'TS20071102', fagnavn: 'Advanced Interaction Design',                            dato: '15.06.2026', karakter: '10', ects: 10, ectsSkar: 'B', semester: 'Forårssemesteret 2026' },
-    { fagkode: 'TS30072102', fagnavn: 'Advanced Software Architecture and Analysis Techniques', dato: '28.01.2026', karakter: '4',  ects: 10, ectsSkar: 'D', semester: 'Vintereksamen 2025-26'  },
-    { fagkode: 'TS20057102', fagnavn: 'Big Data and Data Science',                              dato: '21.01.2026', karakter: '4',  ects: 10, ectsSkar: 'D', semester: 'Vintereksamen 2025-26'  },
-    { fagkode: 'TS20004102', fagnavn: 'Scientific Methods',                                     dato: '18.01.2026', karakter: '7',  ects: 5,  ectsSkar: 'C', semester: 'Vintereksamen 2025-26'  },
-];
+const ResultsPage = () => {
+    const studentId = 1
 
-const semesters = ['Alle semestre', ...Array.from(new Set(results.map((r) => r.semester)))];
+    const [gradeResults, setGradeResults] = useState<GradeResult[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
-const tableHeaderStyle: React.CSSProperties = {
-    padding: '10px 16px',
-    textAlign: 'left',
-    borderBottom: '1px solid #e5e5e5',
-    backgroundColor: '#fafafa',
-    whiteSpace: 'nowrap',
-};
+    useEffect(() => {
+        fetchGradeResults()
+    }, [])
 
-const tableCellStyle: React.CSSProperties = {
-    padding: '13px 16px',
-    borderBottom: '1px solid #f0f0f0',
-    verticalAlign: 'top',
-};
+    const fetchGradeResults = async () => {
+        try {
+            setLoading(true)
+            setError(null)
 
-function ResultsPage() {
-    const [selectedSemester, setSelectedSemester] = useState('Alle semestre');
-    const navigate = useNavigate();
+            const response = await fetch(`http://localhost:8081/api/grade-results/student/${studentId}`)
 
-    const filtered = selectedSemester === 'Alle semestre'
-        ? results
-        : results.filter((r) => r.semester === selectedSemester);
+            if (!response.ok) {
+                throw new Error('Kunne ikke hente resultater.')
+            }
+
+            const data = await response.json()
+            setGradeResults(data)
+        } catch {
+            setError('Der skete en fejl ved hentning af resultater.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const formatDate = (value?: string) => {
+        if (!value) {
+            return '-'
+        }
+
+        return new Date(value).toLocaleString('da-DK', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        })
+    }
+
+    const formatPassed = (passed: boolean) => {
+        return passed ? 'Bestået' : 'Ikke bestået'
+    }
+
+    const getTeacherName = (gradeResult: GradeResult) => {
+        if (gradeResult.teacherFirstName || gradeResult.teacherLastName) {
+            return `${gradeResult.teacherFirstName ?? ''} ${gradeResult.teacherLastName ?? ''}`.trim()
+        }
+
+        return '-'
+    }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%' }}>
-            <TopBar breadcrumb="4. Resultater" />
+        <div style={styles.page}>
+            <div style={styles.header}>
+                <h1 style={styles.title}>Resultater</h1>
+                <p style={styles.subtitle}>
+                    Her kan studenten se sine eksamensresultater og feedback.
+                </p>
+            </div>
 
-            <main style={{ padding: '36px 40px', flex: 1, backgroundColor: '#fafafa' }}>
-
-                {/* Tilbage */}
-                <button
-                    onClick={() => navigate('/')}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        padding: '0', marginBottom: '16px',
-                    }}
-                >
-                    <ChevronLeft size={16} color="#555" />
-                    <NormalText text="Tilbage" size={13} color="#555" fontWeight={400} />
-                </button>
-
-                {/* Titel + Eksporter */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
-                    <NormalText text="Resultater" size={28} color="#111" fontWeight={700} />
-                    <NormalButton text="Eksporter resultater" />
-                </div>
-
-                {/* Indhold-kort */}
-                <div style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '10px',
-                    border: '1px solid #e5e5e5',
-                    overflow: 'hidden',
-                }}>
-                    {/* Semester-filter */}
-                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e5e5' }}>
-                        <select
-                            value={selectedSemester}
-                            onChange={(e) => setSelectedSemester(e.target.value)}
-                            style={{
-                                padding: '8px 32px 8px 12px',
-                                border: '1px solid #d0d0d0',
-                                borderRadius: '6px',
-                                fontSize: '13px',
-                                fontFamily: 'inherit',
-                                color: '#111',
-                                backgroundColor: '#fff',
-                                cursor: 'pointer',
-                                appearance: 'auto',
-                            }}
-                        >
-                            {semesters.map((s) => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                        </select>
+            <section style={styles.card}>
+                <div style={styles.cardHeader}>
+                    <div>
+                        <h2 style={styles.cardTitle}>Mine resultater</h2>
+                        <p style={styles.cardSubtitle}>
+                            Resultater for student #{studentId}.
+                        </p>
                     </div>
 
-                    {/* Tabel */}
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr>
-                                {['Fagkode', 'Fagnavn', 'Dato', 'Karakter', 'ECTS', 'ECTS-kar.'].map((h) => (
-                                    <th key={h} style={tableHeaderStyle}>
-                                        <NormalText text={h} size={13} color="#888" fontWeight={500} />
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((r) => (
-                                <tr key={r.fagkode}>
-                                    <td style={tableCellStyle}><NormalText text={r.fagkode}           size={14} color="#111" /></td>
-                                    <td style={tableCellStyle}><NormalText text={r.fagnavn}           size={14} color="#111" /></td>
-                                    <td style={tableCellStyle}><NormalText text={r.dato}              size={14} color="#111" /></td>
-                                    <td style={tableCellStyle}><NormalText text={r.karakter}          size={14} color="#111" fontWeight={600} /></td>
-                                    <td style={tableCellStyle}><NormalText text={String(r.ects)}      size={14} color="#111" /></td>
-                                    <td style={tableCellStyle}><NormalText text={r.ectsSkar}          size={14} color="#111" /></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <button onClick={fetchGradeResults} style={styles.refreshButton}>
+                        Opdater
+                    </button>
                 </div>
 
-            </main>
+                {loading && (
+                    <p style={styles.infoText}>Henter resultater...</p>
+                )}
+
+                {error && (
+                    <p style={styles.errorText}>{error}</p>
+                )}
+
+                {!loading && !error && gradeResults.length === 0 && (
+                    <p style={styles.infoText}>Ingen resultater fundet.</p>
+                )}
+
+                {!loading && !error && gradeResults.length > 0 && (
+                    <div style={styles.tableWrapper}>
+                        <table style={styles.table}>
+                            <thead>
+                            <tr>
+                                <th style={styles.th}>#</th>
+                                <th style={styles.th}>Kursus</th>
+                                <th style={styles.th}>Kursuskode</th>
+                                <th style={styles.th}>Eksamen</th>
+                                <th style={styles.th}>Eksamensform</th>
+                                <th style={styles.th}>Karakter</th>
+                                <th style={styles.th}>ECTS</th>
+                                <th style={styles.th}>Status</th>
+                                <th style={styles.th}>Underviser</th>
+                                <th style={styles.th}>Feedback</th>
+                                <th style={styles.th}>Bedømt</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                            {gradeResults.map((gradeResult) => (
+                                <tr key={gradeResult.gradeResultId}>
+                                    <td style={styles.td}>{gradeResult.gradeResultId}</td>
+                                    <td style={styles.td}>{gradeResult.courseName ?? '-'}</td>
+                                    <td style={styles.td}>{gradeResult.courseCode ?? '-'}</td>
+                                    <td style={styles.td}>{gradeResult.examTitle ?? '-'}</td>
+                                    <td style={styles.td}>{gradeResult.examType ?? '-'}</td>
+                                    <td style={styles.td}>
+                                        <strong>{gradeResult.gradeValue}</strong>
+                                    </td>
+                                    <td style={styles.td}>{gradeResult.ectsGrade ?? '-'}</td>
+                                    <td style={styles.td}>
+                                        <span
+                                            style={{
+                                                ...styles.statusBadge,
+                                                backgroundColor: gradeResult.passed ? '#e8f3e6' : '#fde8e8',
+                                                color: gradeResult.passed ? '#2f472c' : '#991b1b',
+                                            }}
+                                        >
+                                            {formatPassed(gradeResult.passed)}
+                                        </span>
+                                    </td>
+                                    <td style={styles.td}>{getTeacherName(gradeResult)}</td>
+                                    <td style={styles.td}>{gradeResult.feedback ?? '-'}</td>
+                                    <td style={styles.td}>{formatDate(gradeResult.gradedAt)}</td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </section>
         </div>
-    );
+    )
 }
 
-export default ResultsPage;
+const styles: { [key: string]: CSSProperties } = {
+    page: {
+        padding: '32px',
+        backgroundColor: '#f8f9f7',
+        minHeight: '100vh',
+    },
+    header: {
+        marginBottom: '28px',
+    },
+    title: {
+        margin: 0,
+        fontSize: '36px',
+        fontWeight: 800,
+        color: '#111827',
+    },
+    subtitle: {
+        marginTop: '8px',
+        fontSize: '16px',
+        color: '#4b5563',
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: '16px',
+        border: '1px solid #e5e7eb',
+        padding: '24px',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+    },
+    cardHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '20px',
+    },
+    cardTitle: {
+        margin: 0,
+        fontSize: '24px',
+        fontWeight: 700,
+    },
+    cardSubtitle: {
+        marginTop: '6px',
+        color: '#6b7280',
+    },
+    refreshButton: {
+        backgroundColor: '#2f472c',
+        color: '#ffffff',
+        border: 'none',
+        borderRadius: '8px',
+        padding: '10px 16px',
+        fontWeight: 700,
+        cursor: 'pointer',
+    },
+    tableWrapper: {
+        overflowX: 'auto',
+    },
+    table: {
+        width: '100%',
+        borderCollapse: 'collapse',
+        fontSize: '14px',
+    },
+    th: {
+        textAlign: 'left',
+        padding: '12px',
+        borderBottom: '1px solid #e5e7eb',
+        color: '#6b7280',
+        fontWeight: 700,
+        whiteSpace: 'nowrap',
+    },
+    td: {
+        padding: '12px',
+        borderBottom: '1px solid #f0f0f0',
+        verticalAlign: 'top',
+    },
+    statusBadge: {
+        display: 'inline-block',
+        padding: '5px 10px',
+        borderRadius: '999px',
+        fontWeight: 700,
+        fontSize: '13px',
+        whiteSpace: 'nowrap',
+    },
+    infoText: {
+        color: '#6b7280',
+    },
+    errorText: {
+        color: '#b91c1c',
+        fontWeight: 600,
+    },
+}
+
+export default ResultsPage

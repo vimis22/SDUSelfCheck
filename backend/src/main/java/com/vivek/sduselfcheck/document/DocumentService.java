@@ -73,6 +73,13 @@ public class DocumentService {
         return mapToResponse(documentRequest);
     }
 
+    public void deleteDocumentRequest(Long documentRequestId) {
+        DocumentRequest documentRequest = documentRequestRepository.findById(documentRequestId)
+                .orElseThrow(() -> new RuntimeException("Document request not found with id: " + documentRequestId));
+
+        documentRequestRepository.delete(documentRequest);
+    }
+
     public DocumentPreviewResponse getDocumentPreview(Long documentRequestId) {
         DocumentRequest documentRequest = documentRequestRepository.findById(documentRequestId)
                 .orElseThrow(() -> new RuntimeException("Document request not found with id: " + documentRequestId));
