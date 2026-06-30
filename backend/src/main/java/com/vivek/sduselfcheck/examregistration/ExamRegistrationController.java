@@ -18,4 +18,9 @@ public class ExamRegistrationController {
     public List<ExamRegistrationResponse> getAllExamRegistrations() {
         return examRegistrationService.getAllExamRegistrations();
     }
+
+    @GetMapping("/api/exam-registrations/without-grade-result")
+    public List<PendingGradeRegistrationResponse> getExamRegistrationsWithoutGradeResult() {
+        return examRegistrationService.getExamRegistrationsWithoutGradeResult();
+    }
 }

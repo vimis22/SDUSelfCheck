@@ -14,6 +14,28 @@ public class ExamRegistrationService {
         this.examRegistrationRepository = examRegistrationRepository;
     }
 
+    public List<PendingGradeRegistrationResponse> getExamRegistrationsWithoutGradeResult() {
+        return examRegistrationRepository.findAllWithoutGradeResult()
+                .stream()
+                .map(registration -> new PendingGradeRegistrationResponse(
+                        registration.getExamRegistrationId(),
+                        registration.getStudent().getStudentId(),
+                        registration.getStudent().getStudentNumber(),
+                        registration.getStudent().getUser().getFirstName(),
+                        registration.getStudent().getUser().getLastName(),
+                        registration.getExam().getExamId(),
+                        registration.getExam().getTitle(),
+                        registration.getExam().getExamType(),
+                        registration.getExam().getExamDate(),
+                        registration.getExam().getCourse().getCourseId(),
+                        registration.getExam().getCourse().getCode(),
+                        registration.getExam().getCourse().getName(),
+                        registration.getStatus(),
+                        registration.getAttemptNumber()
+                ))
+                .toList();
+    }
+
     public List<ExamRegistrationResponse> getAllExamRegistrations() {
         return examRegistrationRepository.findAll(Sort.by(Sort.Direction.ASC, "examRegistrationId"))
                 .stream()

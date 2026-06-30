@@ -30,7 +30,30 @@ type GradeResult = {
     gradedAt?: string
 }
 
+type PendingRegistration = {
+    examRegistrationId: number
+    studentId: number
+    studentNumber: string
+    studentFirstName: string
+    studentLastName: string
+    examId: number
+    examTitle: string
+    examType: string
+    examDate: string
+    courseId: number
+    courseCode: string
+    courseName: string
+    status: string
+    attemptNumber: number
+}
+
 type EditGradeForm = {
+    gradeValue: string
+    feedback: string
+}
+
+type CreateGradeForm = {
+    selectedRegistrationId: number | ''
     gradeValue: string
     feedback: string
 }
@@ -50,8 +73,20 @@ const TeacherDashboard = () => {
 
     const [saving, setSaving] = useState(false)
 
+    const [pendingRegistrations, setPendingRegistrations] = useState<PendingRegistration[]>([])
+    const [loadingPending, setLoadingPending] = useState(true)
+
+    const [showCreateForm, setShowCreateForm] = useState(false)
+    const [createForm, setCreateForm] = useState<CreateGradeForm>({
+        selectedRegistrationId: '',
+        gradeValue: '12',
+        feedback: '',
+    })
+    const [creating, setCreating] = useState(false)
+
     useEffect(() => {
         fetchGradeResults()
+        fetchPendingRegistrations()
     }, [])
 
     const fetchGradeResults = async () => {
@@ -71,6 +106,57 @@ const TeacherDashboard = () => {
             setError('Der skete en fejl ved hentning af karakterer.')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const fetchPendingRegistrations = async () => {
+        try {
+            setLoadingPending(true)
+            const response = await fetch('http://localhost:8081/api/exam-registrations/without-grade-result')
+            if (!response.ok) throw new Error()
+            const data = await response.json()
+            setPendingRegistrations(data)
+        } catch {
+            // non-critical — silently fail
+        } finally {
+            setLoadingPending(false)
+        }
+    }
+
+    const cancelCreate = () => {
+        setShowCreateForm(false)
+        setCreateForm({ selectedRegistrationId: '', gradeValue: '12', feedback: '' })
+    }
+
+    const saveCreate = async () => {
+        if (!createForm.selectedRegistrationId) return
+
+        try {
+            setCreating(true)
+            setError(null)
+
+            const body = {
+                examRegistrationId: createForm.selectedRegistrationId,
+                teacherId,
+                gradeValue: createForm.gradeValue,
+                feedback: createForm.feedback,
+            }
+
+            const response = await fetch('http://localhost:8081/api/grade-results', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            })
+
+            if (!response.ok) throw new Error('Kunne ikke oprette karakter.')
+
+            cancelCreate()
+            await fetchGradeResults()
+            await fetchPendingRegistrations()
+        } catch {
+            setError('Der skete en fejl ved oprettelse af karakter.')
+        } finally {
+            setCreating(false)
         }
     }
 
@@ -161,6 +247,9 @@ const TeacherDashboard = () => {
 
     const calculatedEctsGrade = calculateEctsGrade(editForm.gradeValue)
     const calculatedPassed = calculatePassed(editForm.gradeValue)
+
+    const createEctsGrade = calculateEctsGrade(createForm.gradeValue)
+    const createPassed = calculatePassed(createForm.gradeValue)
 
     return (
         <div style={styles.page}>
@@ -253,6 +342,151 @@ const TeacherDashboard = () => {
                             ))}
                             </tbody>
                         </table>
+                    </div>
+                )}
+            </section>
+
+            {/* ── Eksamenstilmeldinger uden karakter ── */}
+            <section style={{ ...styles.card, marginTop: '24px' }}>
+                <div style={styles.cardHeader}>
+                    <div>
+                        <h2 style={styles.cardTitle}>Eksamenstilmeldinger uden karakter</h2>
+                        <p style={styles.cardSubtitle}>
+                            Tilmeldinger hvor der endnu ikke er givet en karakter.
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        {!showCreateForm && pendingRegistrations.length > 0 && (
+                            <button
+                                onClick={() => setShowCreateForm(true)}
+                                style={styles.refreshButton}
+                            >
+                                Opret karakter
+                            </button>
+                        )}
+                        <button onClick={fetchPendingRegistrations} style={styles.editButton}>
+                            Opdater
+                        </button>
+                    </div>
+                </div>
+
+                {loadingPending && (
+                    <p style={styles.infoText}>Henter tilmeldinger...</p>
+                )}
+
+                {!loadingPending && pendingRegistrations.length === 0 && (
+                    <p style={styles.infoText}>Ingen eksamenstilmeldinger uden karakter fundet.</p>
+                )}
+
+                {!loadingPending && pendingRegistrations.length > 0 && !showCreateForm && (
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        {pendingRegistrations.map((reg) => (
+                            <li
+                                key={reg.examRegistrationId}
+                                style={{
+                                    padding: '10px 0',
+                                    borderBottom: '1px solid #f0f0f0',
+                                    fontSize: '14px',
+                                    color: '#374151',
+                                }}
+                            >
+                                <strong>{reg.studentFirstName} {reg.studentLastName}</strong>
+                                {' – '}{reg.courseName}{' – '}{reg.examTitle}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                {/* ── Create form ── */}
+                {showCreateForm && (
+                    <div style={{ marginTop: '8px' }}>
+                        <div style={styles.noticeBox}>
+                            ECTS-grade og bestået-status beregnes automatisk ud fra karakteren.
+                        </div>
+
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={styles.label}>
+                                Eksamenstilmelding
+                                <select
+                                    value={createForm.selectedRegistrationId}
+                                    onChange={(e) =>
+                                        setCreateForm({
+                                            ...createForm,
+                                            selectedRegistrationId: Number(e.target.value) || '',
+                                        })
+                                    }
+                                    style={styles.input}
+                                >
+                                    <option value="">Vælg eksamenstilmelding...</option>
+                                    {pendingRegistrations.map((reg) => (
+                                        <option key={reg.examRegistrationId} value={reg.examRegistrationId}>
+                                            {reg.studentFirstName} {reg.studentLastName} – {reg.courseName} – {reg.examTitle}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+
+                        <div style={styles.formGrid}>
+                            <label style={styles.label}>
+                                Karakter
+                                <select
+                                    value={createForm.gradeValue}
+                                    onChange={(e) =>
+                                        setCreateForm({ ...createForm, gradeValue: e.target.value })
+                                    }
+                                    style={styles.input}
+                                >
+                                    <option value="12">12</option>
+                                    <option value="10">10</option>
+                                    <option value="7">7</option>
+                                    <option value="4">4</option>
+                                    <option value="02">02</option>
+                                    <option value="00">00</option>
+                                    <option value="-3">-3</option>
+                                </select>
+                            </label>
+
+                            <label style={styles.label}>
+                                ECTS-grade
+                                <input value={createEctsGrade} readOnly style={styles.readOnlyInput} />
+                            </label>
+
+                            <label style={styles.label}>
+                                Status
+                                <input value={formatPassed(createPassed)} readOnly style={styles.readOnlyInput} />
+                            </label>
+                        </div>
+
+                        <label style={styles.label}>
+                            Feedback
+                            <textarea
+                                value={createForm.feedback}
+                                onChange={(e) =>
+                                    setCreateForm({ ...createForm, feedback: e.target.value })
+                                }
+                                style={styles.textarea}
+                            />
+                        </label>
+
+                        <div style={styles.editActions}>
+                            <button
+                                onClick={saveCreate}
+                                disabled={creating || !createForm.selectedRegistrationId}
+                                style={{
+                                    ...styles.saveButton,
+                                    opacity: !createForm.selectedRegistrationId ? 0.6 : 1,
+                                    cursor: !createForm.selectedRegistrationId ? 'not-allowed' : 'pointer',
+                                }}
+                            >
+                                {creating ? 'Gemmer...' : 'Gem karakter'}
+                            </button>
+
+                            <button onClick={cancelCreate} style={styles.cancelButton}>
+                                Annuller
+                            </button>
+                        </div>
                     </div>
                 )}
             </section>
