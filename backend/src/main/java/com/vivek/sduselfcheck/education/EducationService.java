@@ -15,7 +15,7 @@ public class EducationService {
     }
 
     public List<EducationResponse> getAllEducations() {
-        return educationRepository.findAll(Sort.by(Sort.Direction.ASC, "educationId"))
+        return educationRepository.findAll(Sort.by(Sort.Order.asc("degreeType"), Sort.Order.asc("name")))
                 .stream()
                 .map(education -> new EducationResponse(
                         education.getEducationId(),

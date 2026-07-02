@@ -19,7 +19,14 @@ type StudentRow = {
     educationId: number | null;
 };
 
-type EducationOption = { educationId: number; name: string; code: string };
+type EducationOption = { educationId: number; name: string; code: string; degreeType: string };
+
+function formatDegree(degreeType: string | null | undefined): string {
+    const upper = (degreeType ?? '').toUpperCase();
+    if (upper === 'BACHELOR') return 'Bachelor';
+    if (upper === 'MASTER') return 'Kandidat';
+    return degreeType ?? '';
+}
 
 const thStyle: React.CSSProperties = {
     padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e5e5e5',
@@ -326,7 +333,7 @@ export default function AdminStudentsPage() {
                                         <option value="">– Vælg uddannelse –</option>
                                         {educations.map(ed => (
                                             <option key={ed.educationId} value={ed.educationId}>
-                                                {ed.code} – {ed.name}
+                                                {formatDegree(ed.degreeType)} – {ed.name}
                                             </option>
                                         ))}
                                     </select>
@@ -494,7 +501,7 @@ export default function AdminStudentsPage() {
                                         <option value="">– Uændret –</option>
                                         {educations.map(ed => (
                                             <option key={ed.educationId} value={ed.educationId}>
-                                                {ed.code} – {ed.name}
+                                                {formatDegree(ed.degreeType)} – {ed.name}
                                             </option>
                                         ))}
                                     </select>
