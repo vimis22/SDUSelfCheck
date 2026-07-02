@@ -1,5 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 
+type ReexamStatus = 'idle' | 'loading' | 'done' | 'error'
+
 type GradeResult = {
     gradeResultId: number
     examRegistrationId: number
@@ -36,6 +38,7 @@ const ResultsPage = () => {
     const [gradeResults, setGradeResults] = useState<GradeResult[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [reexamStatus, setReexamStatus] = useState<Record<number, ReexamStatus>>({})
 
     useEffect(() => {
         fetchGradeResults()
@@ -77,6 +80,25 @@ const ResultsPage = () => {
 
     const formatPassed = (passed: boolean) => {
         return passed ? 'Bestået' : 'Ikke bestået'
+    }
+
+    const handleReexam = async (gradeResult: GradeResult) => {
+        if (!gradeResult.examId) return
+        const id = gradeResult.gradeResultId
+        setReexamStatus(prev => ({ ...prev, [id]: 'loading' }))
+        try {
+            const response = await fetch('http://localhost:8081/api/exam-registrations/reexam', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId, examId: gradeResult.examId }),
+            })
+            if (!response.ok) {
+                throw new Error('Tilmelding mislykkedes.')
+            }
+            setReexamStatus(prev => ({ ...prev, [id]: 'done' }))
+        } catch {
+            setReexamStatus(prev => ({ ...prev, [id]: 'error' }))
+        }
     }
 
     const getTeacherName = (gradeResult: GradeResult) => {
@@ -138,6 +160,7 @@ const ResultsPage = () => {
                                 <th style={styles.th}>Underviser</th>
                                 <th style={styles.th}>Feedback</th>
                                 <th style={styles.th}>Bedømt</th>
+                                <th style={styles.th}></th>
                             </tr>
                             </thead>
 
@@ -167,6 +190,34 @@ const ResultsPage = () => {
                                     <td style={styles.td}>{getTeacherName(gradeResult)}</td>
                                     <td style={styles.td}>{gradeResult.feedback ?? '-'}</td>
                                     <td style={styles.td}>{formatDate(gradeResult.gradedAt)}</td>
+                                    <td style={styles.td}>
+                                        {!gradeResult.passed && (() => {
+                                            const status = reexamStatus[gradeResult.gradeResultId]
+                                            if (status === 'done') {
+                                                return <span style={{ color: '#2f472c', fontWeight: 600, fontSize: '13px' }}>Tilmeldt re-eksamen</span>
+                                            }
+                                            return (
+                                                <button
+                                                    onClick={() => handleReexam(gradeResult)}
+                                                    disabled={status === 'loading'}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        backgroundColor: status === 'error' ? '#b91c1c' : '#1e3a5f',
+                                                        color: '#fff',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+                                                        fontSize: '13px',
+                                                        fontFamily: 'inherit',
+                                                        whiteSpace: 'nowrap',
+                                                        opacity: status === 'loading' ? 0.6 : 1,
+                                                    }}
+                                                >
+                                                    {status === 'loading' ? 'Tilmelder...' : status === 'error' ? 'Fejl – prøv igen' : 'Tilmeld Re-Eksamen'}
+                                                </button>
+                                            )
+                                        })()}
+                                    </td>
                                 </tr>
                             ))}
                             </tbody>
