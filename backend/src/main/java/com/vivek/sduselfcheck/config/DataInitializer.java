@@ -16,6 +16,8 @@ import com.vivek.sduselfcheck.student.Student;
 import com.vivek.sduselfcheck.student.StudentRepository;
 import com.vivek.sduselfcheck.teacher.Teacher;
 import com.vivek.sduselfcheck.teacher.TeacherRepository;
+import com.vivek.sduselfcheck.studentcard.StudentCard;
+import com.vivek.sduselfcheck.studentcard.StudentCardRepository;
 import com.vivek.sduselfcheck.user.AppUser;
 import com.vivek.sduselfcheck.user.AppUserRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -37,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     private final StudentRepository studentRepository;
     private final AppUserRepository appUserRepository;
     private final CourseEnrollmentRepository courseEnrollmentRepository;
+    private final StudentCardRepository studentCardRepository;
 
     public DataInitializer(
             ExamRegistrationRepository examRegistrationRepository,
@@ -47,7 +50,8 @@ public class DataInitializer implements CommandLineRunner {
             GradeResultRepository gradeResultRepository,
             StudentRepository studentRepository,
             AppUserRepository appUserRepository,
-            CourseEnrollmentRepository courseEnrollmentRepository
+            CourseEnrollmentRepository courseEnrollmentRepository,
+            StudentCardRepository studentCardRepository
     ) {
         this.examRegistrationRepository = examRegistrationRepository;
         this.examRepository = examRepository;
@@ -58,6 +62,7 @@ public class DataInitializer implements CommandLineRunner {
         this.studentRepository = studentRepository;
         this.appUserRepository = appUserRepository;
         this.courseEnrollmentRepository = courseEnrollmentRepository;
+        this.studentCardRepository = studentCardRepository;
     }
 
     @Override
@@ -66,6 +71,7 @@ public class DataInitializer implements CommandLineRunner {
         updateStudentDocumentPreviewData();
         ensureAvailableCourses();
         ensureTeacherCourses();
+        ensureStudentCards();
         ensurePendingExamRegistration();
 
         if (gradeResultRepository.count() > 0) {
@@ -588,5 +594,24 @@ public class DataInitializer implements CommandLineRunner {
         gradeResult.setGradedAt(LocalDateTime.now());
 
         gradeResultRepository.save(gradeResult);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Student cards — one card per student
+    // ─────────────────────────────────────────────────────────────────────────────
+    private void ensureStudentCards() {
+        for (Student student : studentRepository.findAll()) {
+            if (studentCardRepository.findByStudentStudentId(student.getStudentId()).isPresent()) {
+                continue;
+            }
+
+            String cardNumber = String.format("SDU-%04d-%06d", student.getStudentId(), student.getStudentId() * 12345L % 1000000);
+            String qrCodeValue = "SDU-STUDENT-" + student.getStudentId() + "-" + student.getStudentNumber();
+            LocalDate validUntil = LocalDate.of(2027, 7, 31);
+
+            StudentCard card = new StudentCard(student, cardNumber, validUntil, "VALID", qrCodeValue);
+            studentCardRepository.save(card);
+            System.out.println("Student card created for student: " + student.getStudentNumber());
+        }
     }
 }
