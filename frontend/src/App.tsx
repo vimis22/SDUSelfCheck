@@ -16,6 +16,10 @@ import LoginPage from './pages/LoginPage';
 
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
+import TeacherCoursesPage from './pages/TeacherCoursesPage';
+import TeacherGradesPage from './pages/TeacherGradesPage';
+import TeacherExamsPage from './pages/TeacherExamsPage';
+import TeacherSupportPage from './pages/TeacherSupportPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminStudentsPage from './pages/AdminStudentsPage';
@@ -119,6 +123,26 @@ function AppRoutes() {
                 <Route path="/teacher-dashboard" element={
                     <ProtectedRoute allowedRoles={['TEACHER']}>
                         <TeacherDashboard />
+                    </ProtectedRoute>
+                } />
+                <Route path="/teacher/courses" element={
+                    <ProtectedRoute allowedRoles={['TEACHER']}>
+                        <TeacherCoursesPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/teacher/grades" element={
+                    <ProtectedRoute allowedRoles={['TEACHER']}>
+                        <TeacherGradesPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/teacher/exams" element={
+                    <ProtectedRoute allowedRoles={['TEACHER']}>
+                        <TeacherExamsPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/teacher/support" element={
+                    <ProtectedRoute allowedRoles={['TEACHER']}>
+                        <TeacherSupportPage />
                     </ProtectedRoute>
                 } />
 

@@ -35,10 +35,10 @@ const studentNavItems: NavItem[] = [
 
 const teacherNavItems: NavItem[] = [
     { text: 'Home',               icon: <Home size={20} />,         to: '/teacher-dashboard' },
-    { text: 'Mine fag',           icon: <BookMarked size={20} />,   to: '/teacher-dashboard' },
-    { text: 'Indtast karakterer', icon: <PenLine size={20} />,      to: '/teacher-dashboard' },
-    { text: 'Eksamen',            icon: <ClipboardList size={20} />,to: '/exams' },
-    { text: 'Hjælp & Support',    icon: <HelpCircle size={20} />,   to: '/help' },
+    { text: 'Mine fag',           icon: <BookMarked size={20} />,   to: '/teacher/courses' },
+    { text: 'Indtast karakterer', icon: <PenLine size={20} />,      to: '/teacher/grades' },
+    { text: 'Eksamen',            icon: <ClipboardList size={20} />,to: '/teacher/exams' },
+    { text: 'Hjælp & Support',    icon: <HelpCircle size={20} />,   to: '/teacher/support' },
 ];
 
 const adminNavItems: NavItem[] = [

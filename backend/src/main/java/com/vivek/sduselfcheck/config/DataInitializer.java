@@ -4,6 +4,8 @@ import com.vivek.sduselfcheck.course.Course;
 import com.vivek.sduselfcheck.course.CourseRepository;
 import com.vivek.sduselfcheck.education.Education;
 import com.vivek.sduselfcheck.education.EducationRepository;
+import com.vivek.sduselfcheck.enrollment.CourseEnrollment;
+import com.vivek.sduselfcheck.enrollment.CourseEnrollmentRepository;
 import com.vivek.sduselfcheck.exam.Exam;
 import com.vivek.sduselfcheck.exam.ExamRepository;
 import com.vivek.sduselfcheck.examregistration.ExamRegistration;
@@ -34,6 +36,7 @@ public class DataInitializer implements CommandLineRunner {
     private final GradeResultRepository gradeResultRepository;
     private final StudentRepository studentRepository;
     private final AppUserRepository appUserRepository;
+    private final CourseEnrollmentRepository courseEnrollmentRepository;
 
     public DataInitializer(
             ExamRegistrationRepository examRegistrationRepository,
@@ -43,7 +46,8 @@ public class DataInitializer implements CommandLineRunner {
             TeacherRepository teacherRepository,
             GradeResultRepository gradeResultRepository,
             StudentRepository studentRepository,
-            AppUserRepository appUserRepository
+            AppUserRepository appUserRepository,
+            CourseEnrollmentRepository courseEnrollmentRepository
     ) {
         this.examRegistrationRepository = examRegistrationRepository;
         this.examRepository = examRepository;
@@ -53,6 +57,7 @@ public class DataInitializer implements CommandLineRunner {
         this.gradeResultRepository = gradeResultRepository;
         this.studentRepository = studentRepository;
         this.appUserRepository = appUserRepository;
+        this.courseEnrollmentRepository = courseEnrollmentRepository;
     }
 
     @Override
@@ -60,12 +65,14 @@ public class DataInitializer implements CommandLineRunner {
         ensureTestUsers();
         updateStudentDocumentPreviewData();
         ensureAvailableCourses();
+        ensureTeacherCourses();
         ensurePendingExamRegistration();
 
         if (gradeResultRepository.count() > 0) {
             System.out.println("Grade result test data already exists.");
             ensureFailedGradeResult();
             ensureReexamExam();
+            ensureTeacherTestData();
             return;
         }
 
@@ -131,6 +138,7 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("Grade result test data inserted.");
         ensureFailedGradeResult();
         ensureReexamExam();
+        ensureTeacherTestData();
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -194,7 +202,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // Course setup
+    // General course setup (existing courses, not teacher-specific)
     //
     // semesterNumber convention:
     //   1  → 1. semester
@@ -214,7 +222,6 @@ public class DataInitializer implements CommandLineRunner {
         Object[][] courseDefs = {
                 // ── 3. semester elective courses ───────────────────────────────────────
                 {"SE-EIS-03",  "Engineering of Innovative Software",  10,  3, false},
-                {"SE-ICP-03",  "In-company Project",                  15,  3, false},
                 {"SE-SM-03",   "Software Maintenance",                 5,  3, false},
                 {"SE-CC-04",   "Cloud Computing Continuum",            5,  3, false},
                 {"SE-CYB-04",  "Cybersecurity",                        5,  3, false},
@@ -222,9 +229,7 @@ public class DataInitializer implements CommandLineRunner {
                 {"SE-HRI-04",  "Human-Robot Interaction",              5,  3, false},
                 {"SE-EL-04",   "Embedded Linux",                       5,  3, false},
                 // ── Speciale courses ───────────────────────────────────────────────────
-                // semesterNumber 34 = spans 3. + 4. semester
                 {"SE-MT40",    "Master's Thesis 40 ECTS",             40, 34, false},
-                // semesterNumber 4 = 4. semester only
                 {"SE-MT30",    "Master's Thesis 30 ECTS",             30,  4, false},
         };
 
@@ -241,7 +246,6 @@ public class DataInitializer implements CommandLineRunner {
                 courseRepository.save(course);
                 System.out.println("Course created: " + name + " (semester " + semester + ")");
             } else if (!course.getSemesterNumber().equals(semester)) {
-                // Fix wrong semester number from a previous run
                 System.out.println("Fixing semester for '" + course.getName()
                         + "': " + course.getSemesterNumber() + " → " + semester);
                 course.setSemesterNumber(semester);
@@ -263,6 +267,151 @@ public class DataInitializer implements CommandLineRunner {
                 examRepository.save(exam);
                 System.out.println("Ordinary exam created for: " + name);
             }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Teacher-specific courses — assigned to the teacher user
+    // ─────────────────────────────────────────────────────────────────────────────
+    private void ensureTeacherCourses() {
+        AppUser teacherUser = appUserRepository.findByEmail("teacher@sdu.dk").orElse(null);
+        if (teacherUser == null) {
+            System.out.println("Teacher user not found. Skipping teacher courses setup.");
+            return;
+        }
+
+        Teacher teacher = teacherRepository.findByAppUserUserId(teacherUser.getUserId()).orElse(null);
+        if (teacher == null) {
+            System.out.println("Teacher entity not found for teacher@sdu.dk. Skipping teacher courses setup.");
+            return;
+        }
+
+        Education education = educationRepository.findById(1L).orElse(null);
+        if (education == null) {
+            System.out.println("Education id=1 not found. Skipping teacher courses setup.");
+            return;
+        }
+
+        // Teacher's assigned courses
+        Object[][] teacherCourseDefs = {
+                {"SE-ASA-03", "Advanced Software Architecture",        10, 3, false},
+                {"SE-BDS-03", "Big Data and Data Science Technologies", 5, 3, false},
+                {"SE-AID-03", "Advanced Interaction Design",            5, 3, false},
+                {"SE-MBS-03", "Model-Based Software Development",       5, 3, false},
+                {"SE-ICP-03", "In-company Project",                    15, 3, false},
+        };
+
+        for (Object[] def : teacherCourseDefs) {
+            String code       = (String)  def[0];
+            String name       = (String)  def[1];
+            Integer ects      = (Integer) def[2];
+            Integer semester  = (Integer) def[3];
+            Boolean mandatory = (Boolean) def[4];
+
+            Course course = courseRepository.findByCode(code).orElse(null);
+            if (course == null) {
+                course = new Course(name, code, ects, semester, mandatory, education);
+                System.out.println("Teacher course created: " + name);
+            }
+
+            // Assign teacher if not already assigned
+            if (course.getTeacher() == null || !course.getTeacher().getTeacherId().equals(teacher.getTeacherId())) {
+                course.setTeacher(teacher);
+                courseRepository.save(course);
+                System.out.println("Teacher assigned to course: " + name);
+            } else {
+                courseRepository.save(course);
+            }
+
+            // Ensure an ordinary exam exists
+            final Course savedCourse = course;
+            if (examRepository.findFirstByCourseAndReexamFalse(savedCourse).isEmpty()) {
+                Exam exam = new Exam(
+                        name + " Eksamen",
+                        "WRITTEN",
+                        LocalDate.of(2026, 8, 15),
+                        null,
+                        null,
+                        "Campus Odense",
+                        false,
+                        savedCourse
+                );
+                examRepository.save(exam);
+                System.out.println("Ordinary exam created for teacher course: " + name);
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Teacher test data — enrollments and exam registrations for teacher's courses
+    // ─────────────────────────────────────────────────────────────────────────────
+    private void ensureTeacherTestData() {
+        AppUser teacherUser = appUserRepository.findByEmail("teacher@sdu.dk").orElse(null);
+        if (teacherUser == null) return;
+
+        Teacher teacher = teacherRepository.findByAppUserUserId(teacherUser.getUserId()).orElse(null);
+        if (teacher == null) return;
+
+        Student student = studentRepository.findById(1L).orElse(null);
+        if (student == null) return;
+
+        // SE-ASA-03: enroll student + create exam registration WITHOUT a grade result
+        ensureEnrollmentAndRegistration(student, "SE-ASA-03", false, teacher, null, null);
+
+        // SE-BDS-03: enroll student + create exam registration WITH a passed grade result
+        ensureEnrollmentAndRegistration(student, "SE-BDS-03", true, teacher, "10", "B");
+
+        // SE-AID-03: enroll student + create exam registration WITH a failed grade (00)
+        ensureEnrollmentAndRegistration(student, "SE-AID-03", true, teacher, "00", "Fx");
+    }
+
+    private void ensureEnrollmentAndRegistration(
+            Student student,
+            String courseCode,
+            boolean createGrade,
+            Teacher teacher,
+            String gradeValue,
+            String ectsGrade
+    ) {
+        Course course = courseRepository.findByCode(courseCode).orElse(null);
+        if (course == null) return;
+
+        // Ensure course enrollment
+        if (!courseEnrollmentRepository.existsByStudentStudentIdAndCourseCourseId(
+                student.getStudentId(), course.getCourseId())) {
+            courseEnrollmentRepository.save(
+                    new CourseEnrollment(student, course, "ENROLLED", LocalDate.now())
+            );
+            System.out.println("Enrollment created: student " + student.getStudentId() + " → " + courseCode);
+        }
+
+        // Ensure exam registration
+        Exam exam = examRepository.findFirstByCourseAndReexamFalse(course).orElse(null);
+        if (exam == null) return;
+
+        if (!examRegistrationRepository.existsByStudentStudentIdAndExamExamId(
+                student.getStudentId(), exam.getExamId())) {
+            ExamRegistration reg = new ExamRegistration(student, exam, "REGISTERED", LocalDate.now(), 1);
+            examRegistrationRepository.save(reg);
+            System.out.println("Exam registration created for " + courseCode);
+
+            // Optionally create grade result
+            if (createGrade && gradeValue != null) {
+                boolean passed = !"00".equals(gradeValue) && !"-3".equals(gradeValue);
+                createGradeResult(reg, teacher, gradeValue, ectsGrade != null ? ectsGrade : "", passed,
+                        "Automatisk oprettet testresultat for " + course.getName() + ".");
+            }
+        } else if (createGrade && gradeValue != null) {
+            // Registration already exists — ensure grade result exists
+            examRegistrationRepository.findByStudentStudentIdAndExamExamId(
+                    student.getStudentId(), exam.getExamId()
+            ).ifPresent(reg -> {
+                if (!gradeResultRepository.existsByExamRegistrationExamRegistrationId(reg.getExamRegistrationId())) {
+                    boolean passed = !"00".equals(gradeValue) && !"-3".equals(gradeValue);
+                    createGradeResult(reg, teacher, gradeValue, ectsGrade != null ? ectsGrade : "", passed,
+                            "Automatisk oprettet testresultat for " + course.getName() + ".");
+                }
+            });
         }
     }
 

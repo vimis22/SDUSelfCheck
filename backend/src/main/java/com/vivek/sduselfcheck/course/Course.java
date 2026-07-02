@@ -1,6 +1,7 @@
 package com.vivek.sduselfcheck.course;
 
 import com.vivek.sduselfcheck.education.Education;
+import com.vivek.sduselfcheck.teacher.Teacher;
 import jakarta.persistence.*;
 
 @Entity
@@ -30,6 +31,10 @@ public class Course {
     @ManyToOne
     @JoinColumn(name = "education_id", nullable = false)
     private Education education;
+
+    @ManyToOne
+    @JoinColumn(name = "teacher_id")
+    private Teacher teacher;
 
     public Course() {
     }
@@ -98,5 +103,13 @@ public class Course {
 
     public void setEducation(Education education) {
         this.education = education;
+    }
+
+    public Teacher getTeacher() {
+        return teacher;
+    }
+
+    public void setTeacher(Teacher teacher) {
+        this.teacher = teacher;
     }
 }

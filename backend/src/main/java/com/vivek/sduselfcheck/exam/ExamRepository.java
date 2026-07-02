@@ -10,6 +10,8 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 
     List<Exam> findByCourse(Course course);
 
+    List<Exam> findByCourseIn(List<Course> courses);
+
     Optional<Exam> findFirstByCourseAndReexamFalse(Course course);
 
     Optional<Exam> findFirstByCourseAndReexamTrue(Course course);
