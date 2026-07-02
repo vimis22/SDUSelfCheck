@@ -58,6 +58,24 @@ public class AdminController {
         return adminService.getAllStudents();
     }
 
+    @PostMapping("/students")
+    public ResponseEntity<?> createStudent(@RequestBody CreateStudentRequest req) {
+        try {
+            return ResponseEntity.ok(adminService.createStudent(req));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/teachers")
+    public ResponseEntity<?> createTeacher(@RequestBody CreateTeacherRequest req) {
+        try {
+            return ResponseEntity.ok(adminService.createTeacher(req));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     // ── Course Enrollments ────────────────────────────────────────────────────
 
     @GetMapping("/course-registrations")
