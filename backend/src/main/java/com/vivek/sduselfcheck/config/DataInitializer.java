@@ -69,6 +69,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         ensureTestUsers();
         updateStudentDocumentPreviewData();
+        updateTeacherData();
         ensureAvailableCourses();
         ensureTeacherCourses();
         ensureStudentCards();
@@ -147,11 +148,7 @@ public class DataInitializer implements CommandLineRunner {
         ensureTeacherTestData();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Ensure canonical test users exist with correct credentials
-    // ─────────────────────────────────────────────────────────────────────────────
     private void ensureTestUsers() {
-        // Update existing student user (id=1) to canonical login credentials
         appUserRepository.findById(1L).ifPresent(user -> {
             boolean updated = false;
             if (!"student@sdu.dk".equals(user.getEmail())) {
@@ -166,13 +163,24 @@ public class DataInitializer implements CommandLineRunner {
                 user.setRole("STUDENT");
                 updated = true;
             }
+            if (user.getFirstName() == null || !"Vivek".equals(user.getFirstName())) {
+                user.setFirstName("Vivek");
+                updated = true;
+            }
+            if (user.getLastName() == null || !"Misra".equals(user.getLastName())) {
+                user.setLastName("Misra");
+                updated = true;
+            }
+            if (user.getStatus() == null) {
+                user.setStatus("ACTIVE");
+                updated = true;
+            }
             if (updated) {
                 appUserRepository.save(user);
                 System.out.println("Student user updated → student@sdu.dk / password");
             }
         });
 
-        // Update existing teacher user (id=2) to canonical login credentials
         appUserRepository.findById(2L).ifPresent(user -> {
             boolean updated = false;
             if (!"teacher@sdu.dk".equals(user.getEmail())) {
@@ -187,13 +195,24 @@ public class DataInitializer implements CommandLineRunner {
                 user.setRole("TEACHER");
                 updated = true;
             }
+            if (user.getFirstName() == null || !"Thomas".equals(user.getFirstName())) {
+                user.setFirstName("Thomas");
+                updated = true;
+            }
+            if (user.getLastName() == null || !"Jensen".equals(user.getLastName())) {
+                user.setLastName("Jensen");
+                updated = true;
+            }
+            if (user.getStatus() == null) {
+                user.setStatus("ACTIVE");
+                updated = true;
+            }
             if (updated) {
                 appUserRepository.save(user);
                 System.out.println("Teacher user updated → teacher@sdu.dk / password");
             }
         });
 
-        // Create admin user if not exists
         if (appUserRepository.findByEmail("admin@sdu.dk").isEmpty()) {
             AppUser admin = new AppUser();
             admin.setEmail("admin@sdu.dk");
@@ -207,16 +226,75 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // General course setup (existing courses, not teacher-specific)
-    //
-    // semesterNumber convention:
-    //   1  → 1. semester
-    //   2  → 2. semester
-    //   3  → 3. semester (elective courses)
-    //  34  → 3. + 4. semester (Speciale 40 ECTS)
-    //   4  → 4. semester (Speciale 30 ECTS)
-    // ─────────────────────────────────────────────────────────────────────────────
+    private void updateStudentDocumentPreviewData() {
+        Student student = studentRepository.findById(1L).orElse(null);
+
+        if (student == null) {
+            System.out.println("Student test data was not updated because student_id 1 was not found.");
+            return;
+        }
+
+        boolean updated = false;
+
+        if (!"ACTIVE".equals(student.getEnrollmentStatus())) {
+            student.setEnrollmentStatus("ACTIVE");
+            updated = true;
+        }
+        if (!Integer.valueOf(2).equals(student.getSemester())) {
+            student.setSemester(2);
+            updated = true;
+        }
+        if (student.getPhoneNumber() == null || !"12345678".equals(student.getPhoneNumber())) {
+            student.setPhoneNumber("12345678");
+            updated = true;
+        }
+        if (student.getStudentNumber() == null || !student.getStudentNumber().equals("SDU-1001")) {
+            if (!studentRepository.existsByStudentNumber("SDU-1001")) {
+                student.setStudentNumber("SDU-1001");
+                updated = true;
+            }
+        }
+
+        if (updated) {
+            studentRepository.save(student);
+            System.out.println("Student document preview test data updated.");
+        }
+    }
+
+    private void updateTeacherData() {
+        AppUser teacherUser = appUserRepository.findByEmail("teacher@sdu.dk").orElse(null);
+        if (teacherUser == null) return;
+
+        Teacher teacher = teacherRepository.findByAppUserUserId(teacherUser.getUserId()).orElse(null);
+        if (teacher == null) return;
+
+        boolean updated = false;
+
+        if (!"TEA-1001".equals(teacher.getEmployeeNumber())) {
+            if (!teacherRepository.existsByEmployeeNumber("TEA-1001")) {
+                teacher.setEmployeeNumber("TEA-1001");
+                updated = true;
+            }
+        }
+        if (teacher.getDepartment() == null || !"Software Engineering".equals(teacher.getDepartment())) {
+            teacher.setDepartment("Software Engineering");
+            updated = true;
+        }
+        if (teacher.getTitle() == null || !"Lecturer".equals(teacher.getTitle())) {
+            teacher.setTitle("Lecturer");
+            updated = true;
+        }
+        if (teacher.getPhoneNumber() == null || !"87654321".equals(teacher.getPhoneNumber())) {
+            teacher.setPhoneNumber("87654321");
+            updated = true;
+        }
+
+        if (updated) {
+            teacherRepository.save(teacher);
+            System.out.println("Teacher data updated.");
+        }
+    }
+
     private void ensureAvailableCourses() {
         Education education = educationRepository.findById(1L).orElse(null);
         if (education == null) {
@@ -224,9 +302,7 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        // code, name, ects, semesterNumber, mandatory
         Object[][] courseDefs = {
-                // ── 3. semester elective courses ───────────────────────────────────────
                 {"SE-EIS-03",  "Engineering of Innovative Software",  10,  3, false},
                 {"SE-SM-03",   "Software Maintenance",                 5,  3, false},
                 {"SE-CC-04",   "Cloud Computing Continuum",            5,  3, false},
@@ -234,7 +310,6 @@ public class DataInitializer implements CommandLineRunner {
                 {"SE-DV-04",   "Data Visualization",                   5,  3, false},
                 {"SE-HRI-04",  "Human-Robot Interaction",              5,  3, false},
                 {"SE-EL-04",   "Embedded Linux",                       5,  3, false},
-                // ── Speciale courses ───────────────────────────────────────────────────
                 {"SE-MT40",    "Master's Thesis 40 ECTS",             40, 34, false},
                 {"SE-MT30",    "Master's Thesis 30 ECTS",             30,  4, false},
         };
@@ -258,7 +333,6 @@ public class DataInitializer implements CommandLineRunner {
                 courseRepository.save(course);
             }
 
-            // Ensure an ordinary exam exists
             if (examRepository.findFirstByCourseAndReexamFalse(course).isEmpty()) {
                 Exam exam = new Exam(
                         name + " Eksamen",
@@ -276,9 +350,6 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Teacher-specific courses — assigned to the teacher user
-    // ─────────────────────────────────────────────────────────────────────────────
     private void ensureTeacherCourses() {
         AppUser teacherUser = appUserRepository.findByEmail("teacher@sdu.dk").orElse(null);
         if (teacherUser == null) {
@@ -298,7 +369,6 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        // Teacher's assigned courses
         Object[][] teacherCourseDefs = {
                 {"SE-ASA-03", "Advanced Software Architecture",        10, 3, false},
                 {"SE-BDS-03", "Big Data and Data Science Technologies", 5, 3, false},
@@ -320,7 +390,6 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.println("Teacher course created: " + name);
             }
 
-            // Assign teacher if not already assigned
             if (course.getTeacher() == null || !course.getTeacher().getTeacherId().equals(teacher.getTeacherId())) {
                 course.setTeacher(teacher);
                 courseRepository.save(course);
@@ -329,7 +398,6 @@ public class DataInitializer implements CommandLineRunner {
                 courseRepository.save(course);
             }
 
-            // Ensure an ordinary exam exists
             final Course savedCourse = course;
             if (examRepository.findFirstByCourseAndReexamFalse(savedCourse).isEmpty()) {
                 Exam exam = new Exam(
@@ -346,7 +414,6 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.println("Ordinary exam created for teacher course: " + name);
             }
 
-            // Ensure a re-exam always exists for teacher courses (required for re-exam registration)
             if (examRepository.findFirstByCourseAndReexamTrue(savedCourse).isEmpty()) {
                 Exam reexam = new Exam(
                         name + " Re-eksamen",
@@ -364,9 +431,6 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Teacher test data — enrollments and exam registrations for teacher's courses
-    // ─────────────────────────────────────────────────────────────────────────────
     private void ensureTeacherTestData() {
         AppUser teacherUser = appUserRepository.findByEmail("teacher@sdu.dk").orElse(null);
         if (teacherUser == null) return;
@@ -377,13 +441,8 @@ public class DataInitializer implements CommandLineRunner {
         Student student = studentRepository.findById(1L).orElse(null);
         if (student == null) return;
 
-        // SE-ASA-03: enroll student + create exam registration WITHOUT a grade result
         ensureEnrollmentAndRegistration(student, "SE-ASA-03", false, teacher, null, null);
-
-        // SE-BDS-03: enroll student + create exam registration WITH a passed grade result
         ensureEnrollmentAndRegistration(student, "SE-BDS-03", true, teacher, "10", "B");
-
-        // SE-AID-03: enroll student + create exam registration WITH a failed grade (00)
         ensureEnrollmentAndRegistration(student, "SE-AID-03", true, teacher, "00", "Fx");
     }
 
@@ -398,7 +457,6 @@ public class DataInitializer implements CommandLineRunner {
         Course course = courseRepository.findByCode(courseCode).orElse(null);
         if (course == null) return;
 
-        // Ensure course enrollment
         if (!courseEnrollmentRepository.existsByStudentStudentIdAndCourseCourseId(
                 student.getStudentId(), course.getCourseId())) {
             courseEnrollmentRepository.save(
@@ -407,7 +465,6 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Enrollment created: student " + student.getStudentId() + " → " + courseCode);
         }
 
-        // Ensure exam registration
         Exam exam = examRepository.findFirstByCourseAndReexamFalse(course).orElse(null);
         if (exam == null) return;
 
@@ -417,14 +474,12 @@ public class DataInitializer implements CommandLineRunner {
             examRegistrationRepository.save(reg);
             System.out.println("Exam registration created for " + courseCode);
 
-            // Optionally create grade result
             if (createGrade && gradeValue != null) {
                 boolean passed = !"00".equals(gradeValue) && !"-3".equals(gradeValue);
                 createGradeResult(reg, teacher, gradeValue, ectsGrade != null ? ectsGrade : "", passed,
                         "Automatisk oprettet testresultat for " + course.getName() + ".");
             }
         } else if (createGrade && gradeValue != null) {
-            // Registration already exists — ensure grade result exists
             examRegistrationRepository.findByStudentStudentIdAndExamExamId(
                     student.getStudentId(), exam.getExamId()
             ).ifPresent(reg -> {
@@ -437,7 +492,6 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    // ── Ensures there is always at least one exam registration without a grade ───
     private void ensurePendingExamRegistration() {
         if (!examRegistrationRepository.findAllWithoutGradeResult().isEmpty()) {
             System.out.println("Pending exam registration already exists. Skipping.");
@@ -497,21 +551,6 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             System.out.println("All registrations for this exam already have grade results. Skipping.");
         }
-    }
-
-    private void updateStudentDocumentPreviewData() {
-        Student student = studentRepository.findById(1L).orElse(null);
-
-        if (student == null) {
-            System.out.println("Student test data was not updated because student_id 1 was not found.");
-            return;
-        }
-
-        student.setEnrollmentStatus("ACTIVE");
-        student.setSemester(2);
-        studentRepository.save(student);
-
-        System.out.println("Student document preview test data updated.");
     }
 
     private void ensureFailedGradeResult() {
@@ -596,9 +635,6 @@ public class DataInitializer implements CommandLineRunner {
         gradeResultRepository.save(gradeResult);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Student cards — one card per student
-    // ─────────────────────────────────────────────────────────────────────────────
     private void ensureStudentCards() {
         for (Student student : studentRepository.findAll()) {
             if (studentCardRepository.findByStudentStudentId(student.getStudentId()).isPresent()) {

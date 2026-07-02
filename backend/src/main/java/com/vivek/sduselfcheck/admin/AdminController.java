@@ -58,6 +58,15 @@ public class AdminController {
         return adminService.getAllStudents();
     }
 
+    @GetMapping("/students/{id}")
+    public ResponseEntity<?> getStudentById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(adminService.getStudentById(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @PostMapping("/students")
     public ResponseEntity<?> createStudent(@RequestBody CreateStudentRequest req) {
         try {
@@ -67,10 +76,84 @@ public class AdminController {
         }
     }
 
+    @PutMapping("/students/{id}")
+    public ResponseEntity<?> updateStudent(@PathVariable Long id, @RequestBody UpdateStudentRequest req) {
+        try {
+            return ResponseEntity.ok(adminService.updateStudent(id, req));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/students/{id}/disable")
+    public ResponseEntity<?> disableStudent(@PathVariable Long id) {
+        try {
+            adminService.disableStudent(id);
+            return ResponseEntity.ok(Map.of("message", "Student deaktiveret."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/students/{id}/enable")
+    public ResponseEntity<?> enableStudent(@PathVariable Long id) {
+        try {
+            adminService.enableStudent(id);
+            return ResponseEntity.ok(Map.of("message", "Student aktiveret."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // ── Teachers (Admin) ──────────────────────────────────────────────────────
+
+    @GetMapping("/teachers")
+    public List<AdminTeacherResponse> getAllTeachersAdmin() {
+        return adminService.getAllTeachersAdmin();
+    }
+
+    @GetMapping("/teachers/{id}")
+    public ResponseEntity<?> getTeacherById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(adminService.getTeacherById(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @PostMapping("/teachers")
     public ResponseEntity<?> createTeacher(@RequestBody CreateTeacherRequest req) {
         try {
             return ResponseEntity.ok(adminService.createTeacher(req));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/teachers/{id}")
+    public ResponseEntity<?> updateTeacher(@PathVariable Long id, @RequestBody UpdateTeacherRequest req) {
+        try {
+            return ResponseEntity.ok(adminService.updateTeacher(id, req));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/teachers/{id}/disable")
+    public ResponseEntity<?> disableTeacher(@PathVariable Long id) {
+        try {
+            adminService.disableTeacher(id);
+            return ResponseEntity.ok(Map.of("message", "Underviser deaktiveret."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/teachers/{id}/enable")
+    public ResponseEntity<?> enableTeacher(@PathVariable Long id) {
+        try {
+            adminService.enableTeacher(id);
+            return ResponseEntity.ok(Map.of("message", "Underviser aktiveret."));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

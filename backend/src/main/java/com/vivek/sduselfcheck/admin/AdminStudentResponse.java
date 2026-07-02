@@ -8,5 +8,7 @@ public record AdminStudentResponse(
         String email,
         String educationName,
         Integer semester,
-        String enrollmentStatus
+        String enrollmentStatus,
+        String phoneNumber,
+        Long educationId
 ) {}

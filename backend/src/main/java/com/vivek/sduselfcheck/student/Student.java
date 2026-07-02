@@ -31,6 +31,9 @@ public class Student {
 
     private Integer semester;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     public Student() {
     }
 
@@ -94,5 +97,13 @@ public class Student {
 
     public void setSemester(Integer semester) {
         this.semester = semester;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }

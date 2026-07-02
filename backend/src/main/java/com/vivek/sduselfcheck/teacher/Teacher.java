@@ -20,6 +20,11 @@ public class Teacher {
 
     private String department;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    private String title;
+
     public Long getTeacherId() {
         return teacherId;
     }
@@ -50,5 +55,21 @@ public class Teacher {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 }

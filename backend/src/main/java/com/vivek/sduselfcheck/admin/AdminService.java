@@ -116,19 +116,182 @@ public class AdminService {
 
     // ── Students ──────────────────────────────────────────────────────────────
 
+    private AdminStudentResponse mapStudentToResponse(Student s) {
+        return new AdminStudentResponse(
+                s.getStudentId(),
+                s.getStudentNumber(),
+                s.getUser().getFirstName(),
+                s.getUser().getLastName(),
+                s.getUser().getEmail(),
+                s.getEducation() != null ? s.getEducation().getName() : null,
+                s.getSemester(),
+                s.getEnrollmentStatus(),
+                s.getPhoneNumber(),
+                s.getEducation() != null ? s.getEducation().getEducationId() : null
+        );
+    }
+
     public List<AdminStudentResponse> getAllStudents() {
         return studentRepository.findAll(Sort.by("studentId")).stream()
-                .map(s -> new AdminStudentResponse(
-                        s.getStudentId(),
-                        s.getStudentNumber(),
-                        s.getUser().getFirstName(),
-                        s.getUser().getLastName(),
-                        s.getUser().getEmail(),
-                        s.getEducation() != null ? s.getEducation().getName() : null,
-                        s.getSemester(),
-                        s.getEnrollmentStatus()
-                ))
+                .map(this::mapStudentToResponse)
                 .toList();
+    }
+
+    public AdminStudentResponse getStudentById(Long id) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student ikke fundet: " + id));
+        return mapStudentToResponse(student);
+    }
+
+    public AdminStudentResponse updateStudent(Long id, UpdateStudentRequest req) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student ikke fundet: " + id));
+        AppUser user = student.getUser();
+
+        if (req.firstName() == null || req.firstName().isBlank()) throw new RuntimeException("Fornavn er påkrævet.");
+        if (req.lastName() == null || req.lastName().isBlank()) throw new RuntimeException("Efternavn er påkrævet.");
+        if (req.email() == null || req.email().isBlank()) throw new RuntimeException("Email er påkrævet.");
+        if (req.studentNumber() == null || req.studentNumber().isBlank()) throw new RuntimeException("Studienummer er påkrævet.");
+
+        if (!req.email().equals(user.getEmail())) {
+            Optional<AppUser> conflict = appUserRepository.findByEmail(req.email());
+            if (conflict.isPresent()) {
+                throw new RuntimeException("Email er allerede i brug: " + req.email());
+            }
+        }
+
+        if (!req.studentNumber().equals(student.getStudentNumber())) {
+            if (studentRepository.existsByStudentNumber(req.studentNumber())) {
+                throw new RuntimeException("Studienummer er allerede i brug: " + req.studentNumber());
+            }
+        }
+
+        user.setFirstName(req.firstName());
+        user.setLastName(req.lastName());
+        user.setEmail(req.email());
+
+        String newStatus = req.enrollmentStatus();
+        if (newStatus != null && !newStatus.isBlank()) {
+            student.setEnrollmentStatus(newStatus);
+            if ("DISABLED".equals(newStatus)) {
+                user.setStatus("DISABLED");
+            } else if ("ACTIVE".equals(newStatus)) {
+                user.setStatus("ACTIVE");
+            }
+        }
+        appUserRepository.save(user);
+
+        student.setStudentNumber(req.studentNumber());
+        student.setPhoneNumber(req.phoneNumber());
+        student.setSemester(req.semester());
+
+        if (req.educationId() != null) {
+            Education education = educationRepository.findById(req.educationId())
+                    .orElseThrow(() -> new RuntimeException("Uddannelse ikke fundet: " + req.educationId()));
+            student.setEducation(education);
+        }
+
+        return mapStudentToResponse(studentRepository.save(student));
+    }
+
+    public void disableStudent(Long studentId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student ikke fundet: " + studentId));
+        student.setEnrollmentStatus("DISABLED");
+        studentRepository.save(student);
+        AppUser user = student.getUser();
+        user.setStatus("DISABLED");
+        appUserRepository.save(user);
+    }
+
+    public void enableStudent(Long studentId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student ikke fundet: " + studentId));
+        student.setEnrollmentStatus("ACTIVE");
+        studentRepository.save(student);
+        AppUser user = student.getUser();
+        user.setStatus("ACTIVE");
+        appUserRepository.save(user);
+    }
+
+    // ── Teachers (Admin) ──────────────────────────────────────────────────────
+
+    private AdminTeacherResponse mapTeacherToAdminResponse(Teacher t) {
+        return new AdminTeacherResponse(
+                t.getTeacherId(),
+                t.getEmployeeNumber(),
+                t.getAppUser().getFirstName(),
+                t.getAppUser().getLastName(),
+                t.getAppUser().getEmail(),
+                t.getPhoneNumber(),
+                t.getDepartment(),
+                t.getTitle(),
+                t.getAppUser().getStatus()
+        );
+    }
+
+    public List<AdminTeacherResponse> getAllTeachersAdmin() {
+        return teacherRepository.findAll(Sort.by("teacherId")).stream()
+                .map(this::mapTeacherToAdminResponse)
+                .toList();
+    }
+
+    public AdminTeacherResponse getTeacherById(Long id) {
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Underviser ikke fundet: " + id));
+        return mapTeacherToAdminResponse(teacher);
+    }
+
+    public AdminTeacherResponse updateTeacher(Long id, UpdateTeacherRequest req) {
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Underviser ikke fundet: " + id));
+        AppUser user = teacher.getAppUser();
+
+        if (req.firstName() == null || req.firstName().isBlank()) throw new RuntimeException("Fornavn er påkrævet.");
+        if (req.lastName() == null || req.lastName().isBlank()) throw new RuntimeException("Efternavn er påkrævet.");
+        if (req.email() == null || req.email().isBlank()) throw new RuntimeException("Email er påkrævet.");
+        if (req.employeeNumber() == null || req.employeeNumber().isBlank()) throw new RuntimeException("Medarbejdernummer er påkrævet.");
+
+        if (!req.email().equals(user.getEmail())) {
+            Optional<AppUser> conflict = appUserRepository.findByEmail(req.email());
+            if (conflict.isPresent()) {
+                throw new RuntimeException("Email er allerede i brug: " + req.email());
+            }
+        }
+
+        if (!req.employeeNumber().equals(teacher.getEmployeeNumber())) {
+            if (teacherRepository.existsByEmployeeNumber(req.employeeNumber())) {
+                throw new RuntimeException("Medarbejdernummer er allerede i brug: " + req.employeeNumber());
+            }
+        }
+
+        user.setFirstName(req.firstName());
+        user.setLastName(req.lastName());
+        user.setEmail(req.email());
+        if (req.status() != null && !req.status().isBlank()) {
+            user.setStatus(req.status());
+        }
+        appUserRepository.save(user);
+
+        teacher.setEmployeeNumber(req.employeeNumber());
+        teacher.setPhoneNumber(req.phoneNumber());
+        teacher.setDepartment(req.department());
+        teacher.setTitle(req.title());
+        return mapTeacherToAdminResponse(teacherRepository.save(teacher));
+    }
+
+    public void disableTeacher(Long teacherId) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Underviser ikke fundet: " + teacherId));
+        teacher.getAppUser().setStatus("DISABLED");
+        appUserRepository.save(teacher.getAppUser());
+    }
+
+    public void enableTeacher(Long teacherId) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Underviser ikke fundet: " + teacherId));
+        teacher.getAppUser().setStatus("ACTIVE");
+        appUserRepository.save(teacher.getAppUser());
     }
 
     // ── Course Enrollments ────────────────────────────────────────────────────
@@ -255,24 +418,14 @@ public class AdminService {
                 savedStudent.getStudentId(),
                 savedStudent.getStudentId() * 7919L % 1000000L);
         String qrCodeValue = "SDU-STUDENT-" + savedStudent.getStudentId() + "-" + System.currentTimeMillis();
-        StudentCard card = new StudentCard(savedStudent, cardNumber, LocalDate.now().plusYears(2), "VALID", qrCodeValue);
-        studentCardRepository.save(card);
+        studentCardRepository.save(new StudentCard(savedStudent, cardNumber, LocalDate.now().plusYears(2), "VALID", qrCodeValue));
 
-        return new AdminStudentResponse(
-                savedStudent.getStudentId(),
-                savedStudent.getStudentNumber(),
-                savedUser.getFirstName(),
-                savedUser.getLastName(),
-                savedUser.getEmail(),
-                education.getName(),
-                savedStudent.getSemester(),
-                savedStudent.getEnrollmentStatus()
-        );
+        return mapStudentToResponse(savedStudent);
     }
 
     // ── Create Teacher ─────────────────────────────────────────────────────────
 
-    public AdminUserResponse createTeacher(CreateTeacherRequest req) {
+    public AdminTeacherResponse createTeacher(CreateTeacherRequest req) {
         if (req.firstName() == null || req.firstName().isBlank()) throw new RuntimeException("Fornavn er påkrævet.");
         if (req.lastName() == null || req.lastName().isBlank()) throw new RuntimeException("Efternavn er påkrævet.");
         if (req.email() == null || req.email().isBlank()) throw new RuntimeException("Email er påkrævet.");
@@ -301,15 +454,6 @@ public class AdminService {
         teacher.setDepartment(req.department());
         Teacher savedTeacher = teacherRepository.save(teacher);
 
-        return new AdminUserResponse(
-                savedUser.getUserId(),
-                savedUser.getEmail(),
-                savedUser.getRole(),
-                savedUser.getStatus(),
-                savedUser.getFirstName(),
-                savedUser.getLastName(),
-                null,
-                savedTeacher.getTeacherId()
-        );
+        return mapTeacherToAdminResponse(savedTeacher);
     }
 }
