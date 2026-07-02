@@ -17,6 +17,13 @@ import LoginPage from './pages/LoginPage';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminStudentsPage from './pages/AdminStudentsPage';
+import AdminTeachersPage from './pages/AdminTeachersPage';
+import AdminCoursesPage from './pages/AdminCoursesPage';
+import AdminExamsPage from './pages/AdminExamsPage';
+import AdminRegistrationsPage from './pages/AdminRegistrationsPage';
+import AdminSystemPage from './pages/AdminSystemPage';
 
 // ── Redirect to role-appropriate home after login ─────────────────────────────
 function RoleHome() {
@@ -119,6 +126,41 @@ function AppRoutes() {
                 <Route path="/admin-dashboard" element={
                     <ProtectedRoute allowedRoles={['ADMIN']}>
                         <AdminDashboard />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/users" element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminUsersPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/students" element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminStudentsPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/teachers" element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminTeachersPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/courses" element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminCoursesPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/exams" element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminExamsPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/registrations" element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminRegistrationsPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/system" element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminSystemPage />
                     </ProtectedRoute>
                 } />
 

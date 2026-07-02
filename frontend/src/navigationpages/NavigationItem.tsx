@@ -43,13 +43,13 @@ const teacherNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
     { text: 'Home',                 icon: <Home size={20} />,          to: '/admin-dashboard' },
-    { text: 'Brugere',              icon: <Users size={20} />,         to: '/admin-dashboard' },
-    { text: 'Studerende',           icon: <GraduationCap size={20} />, to: '/admin-dashboard' },
-    { text: 'Undervisere',          icon: <UserCheck size={20} />,     to: '/admin-dashboard' },
-    { text: 'Fag',                  icon: <BookOpen size={20} />,      to: '/admin-dashboard' },
-    { text: 'Eksamen',              icon: <ClipboardList size={20} />, to: '/admin-dashboard' },
-    { text: 'Tilmeldinger',         icon: <FileText size={20} />,      to: '/admin-dashboard' },
-    { text: 'Systemadministration', icon: <Settings size={20} />,      to: '/admin-dashboard' },
+    { text: 'Brugere',              icon: <Users size={20} />,         to: '/admin/users' },
+    { text: 'Studerende',           icon: <GraduationCap size={20} />, to: '/admin/students' },
+    { text: 'Undervisere',          icon: <UserCheck size={20} />,     to: '/admin/teachers' },
+    { text: 'Fag',                  icon: <BookOpen size={20} />,      to: '/admin/courses' },
+    { text: 'Eksamen',              icon: <ClipboardList size={20} />, to: '/admin/exams' },
+    { text: 'Tilmeldinger',         icon: <FileText size={20} />,      to: '/admin/registrations' },
+    { text: 'Systemadministration', icon: <Settings size={20} />,      to: '/admin/system' },
 ];
 
 export function getNavItemsByRole(role: UserRole): NavItem[] {
