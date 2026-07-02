@@ -1,8 +1,10 @@
 package com.vivek.sduselfcheck.examregistration;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/exam-registrations")
@@ -31,7 +33,11 @@ public class ExamRegistrationController {
     }
 
     @PostMapping("/reexam")
-    public ExamRegistrationResponse registerForReexam(@RequestBody ReexamRegistrationRequest request) {
-        return examRegistrationService.registerForReexam(request);
+    public ResponseEntity<?> registerForReexam(@RequestBody ReexamRegistrationRequest request) {
+        try {
+            return ResponseEntity.ok(examRegistrationService.registerForReexam(request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 }

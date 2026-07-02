@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
+import { useAuth } from '../auth/AuthContext.tsx'
 
 type ReexamStatus = 'idle' | 'loading' | 'done' | 'error'
 
@@ -33,16 +34,18 @@ type GradeResult = {
 }
 
 const ResultsPage = () => {
-    const studentId = 1
+    const { user } = useAuth()
+    const studentId = user?.studentId ?? null
 
     const [gradeResults, setGradeResults] = useState<GradeResult[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [reexamStatus, setReexamStatus] = useState<Record<number, ReexamStatus>>({})
+    const [reexamError, setReexamError] = useState<Record<number, string>>({})
 
     useEffect(() => {
-        fetchGradeResults()
-    }, [])
+        if (studentId != null) fetchGradeResults()
+    }, [studentId])
 
     const fetchGradeResults = async () => {
         try {
@@ -83,20 +86,49 @@ const ResultsPage = () => {
     }
 
     const handleReexam = async (gradeResult: GradeResult) => {
-        if (!gradeResult.examId) return
         const id = gradeResult.gradeResultId
+
+        if (!gradeResult.examId) {
+            console.error('[ResultsPage] handleReexam: examId mangler på gradeResult', gradeResult)
+            setReexamError(prev => ({ ...prev, [id]: 'Eksamen-ID mangler. Kontakt administrator.' }))
+            setReexamStatus(prev => ({ ...prev, [id]: 'error' }))
+            return
+        }
+        if (studentId == null) {
+            setReexamError(prev => ({ ...prev, [id]: 'Student ID mangler. Log ind igen.' }))
+            setReexamStatus(prev => ({ ...prev, [id]: 'error' }))
+            return
+        }
+
         setReexamStatus(prev => ({ ...prev, [id]: 'loading' }))
+        setReexamError(prev => ({ ...prev, [id]: '' }))
+
         try {
             const response = await fetch('http://localhost:8081/api/exam-registrations/reexam', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ studentId, examId: gradeResult.examId }),
             })
-            if (!response.ok) {
-                throw new Error('Tilmelding mislykkedes.')
+
+            let responseBody: { message?: string } | null = null
+            try {
+                responseBody = await response.json()
+            } catch {
+                // non-JSON body — ignore
             }
+
+            if (!response.ok) {
+                const msg = responseBody?.message ?? `HTTP ${response.status}`
+                console.error('[ResultsPage] Re-exam registrering fejlede:', response.status, responseBody)
+                setReexamError(prev => ({ ...prev, [id]: `Fejl: ${msg}` }))
+                setReexamStatus(prev => ({ ...prev, [id]: 'error' }))
+                return
+            }
+
             setReexamStatus(prev => ({ ...prev, [id]: 'done' }))
-        } catch {
+        } catch (e) {
+            console.error('[ResultsPage] Re-exam netværksfejl:', e)
+            setReexamError(prev => ({ ...prev, [id]: 'Netværksfejl. Prøv igen.' }))
             setReexamStatus(prev => ({ ...prev, [id]: 'error' }))
         }
     }
@@ -107,6 +139,19 @@ const ResultsPage = () => {
         }
 
         return '-'
+    }
+
+    if (studentId == null) {
+        return (
+            <div style={styles.page}>
+                <div style={styles.header}>
+                    <h1 style={styles.title}>Resultater</h1>
+                </div>
+                <section style={styles.card}>
+                    <p style={styles.errorText}>Student ID mangler. Log ud og log ind igen.</p>
+                </section>
+            </div>
+        )
     }
 
     return (
@@ -193,28 +238,36 @@ const ResultsPage = () => {
                                     <td style={styles.td}>
                                         {!gradeResult.passed && (() => {
                                             const status = reexamStatus[gradeResult.gradeResultId]
+                                            const errMsg = reexamError[gradeResult.gradeResultId]
                                             if (status === 'done') {
-                                                return <span style={{ color: '#2f472c', fontWeight: 600, fontSize: '13px' }}>Tilmeldt re-eksamen</span>
+                                                return <span style={{ color: '#2f472c', fontWeight: 600, fontSize: '13px' }}>✓ Tilmeldt Re-Eksamen</span>
                                             }
                                             return (
-                                                <button
-                                                    onClick={() => handleReexam(gradeResult)}
-                                                    disabled={status === 'loading'}
-                                                    style={{
-                                                        padding: '6px 12px',
-                                                        backgroundColor: status === 'error' ? '#b91c1c' : '#1e3a5f',
-                                                        color: '#fff',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        cursor: status === 'loading' ? 'not-allowed' : 'pointer',
-                                                        fontSize: '13px',
-                                                        fontFamily: 'inherit',
-                                                        whiteSpace: 'nowrap',
-                                                        opacity: status === 'loading' ? 0.6 : 1,
-                                                    }}
-                                                >
-                                                    {status === 'loading' ? 'Tilmelder...' : status === 'error' ? 'Fejl – prøv igen' : 'Tilmeld Re-Eksamen'}
-                                                </button>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <button
+                                                        onClick={() => handleReexam(gradeResult)}
+                                                        disabled={status === 'loading'}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            backgroundColor: status === 'error' ? '#b91c1c' : '#1e3a5f',
+                                                            color: '#fff',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+                                                            fontSize: '13px',
+                                                            fontFamily: 'inherit',
+                                                            whiteSpace: 'nowrap',
+                                                            opacity: status === 'loading' ? 0.6 : 1,
+                                                        }}
+                                                    >
+                                                        {status === 'loading' ? 'Tilmelder...' : status === 'error' ? 'Prøv igen' : 'Tilmeld Re-Eksamen'}
+                                                    </button>
+                                                    {status === 'error' && errMsg && (
+                                                        <span style={{ fontSize: '11px', color: '#b91c1c', maxWidth: '180px', lineHeight: '1.3' }}>
+                                                            {errMsg}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             )
                                         })()}
                                     </td>

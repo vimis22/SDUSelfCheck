@@ -339,6 +339,22 @@ public class DataInitializer implements CommandLineRunner {
                 examRepository.save(exam);
                 System.out.println("Ordinary exam created for teacher course: " + name);
             }
+
+            // Ensure a re-exam always exists for teacher courses (required for re-exam registration)
+            if (examRepository.findFirstByCourseAndReexamTrue(savedCourse).isEmpty()) {
+                Exam reexam = new Exam(
+                        name + " Re-eksamen",
+                        "WRITTEN",
+                        LocalDate.of(2026, 11, 15),
+                        null,
+                        null,
+                        "Campus Odense",
+                        true,
+                        savedCourse
+                );
+                examRepository.save(reexam);
+                System.out.println("Re-exam created for teacher course: " + name);
+            }
         }
     }
 
